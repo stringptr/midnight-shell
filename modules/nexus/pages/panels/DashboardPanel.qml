@@ -281,20 +281,7 @@ PageBase {
             text: qsTr("General")
         }
 
-        ToggleRow {
-            first: true
-            last: true
-            Layout.fillWidth: true
-            text: qsTr("Hyprland splash")
-            subtext: qsTr("Show the current Hyprland splash text")
-            configNode: root.targetConfig.dashboard
-            propertyName: "showHyprlandSplash"
-            checked: root.targetConfig.dashboard.showHyprlandSplash
-            onToggled: {
-                root.targetConfig.dashboard.showHyprlandSplash = checked;
-                root.targetConfig.save();
-            }
-        }
+
 
         // Media
         SectionHeader {

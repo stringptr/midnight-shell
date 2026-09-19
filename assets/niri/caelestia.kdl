@@ -8,6 +8,5 @@ layer-rule {
     opacity 1.0
 }
 
-// TODO: Niri does not support per-layer animation control.
+// Niri does not support per-layer animation control.
 // Layer surfaces have no open/close animations by default.
-// The Hyprland "noanim" rule for caelestia-shimeji is not needed.

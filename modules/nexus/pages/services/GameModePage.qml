@@ -51,51 +51,7 @@ PageBase {
             onClicked: root.nState.openSubPage(3)
         }
 
-        SectionHeader {
-            text: qsTr("Hyprland overrides")
-        }
-
-        ToggleRow {
-            first: true
-            text: qsTr("Disable animations")
-            configNode: root.targetConfig.utilities.gameMode
-            propertyName: "disableHyprlandAnimations"
-            checked: root.targetConfig.utilities.gameMode.disableHyprlandAnimations
-            onToggled: {
-                root.targetConfig.utilities.gameMode.disableHyprlandAnimations = checked;
-                root.targetConfig.save();
-            }
-        }
-        ToggleRow {
-            text: qsTr("Disable blur")
-            configNode: root.targetConfig.utilities.gameMode
-            propertyName: "disableHyprlandBlur"
-            checked: root.targetConfig.utilities.gameMode.disableHyprlandBlur
-            onToggled: {
-                root.targetConfig.utilities.gameMode.disableHyprlandBlur = checked;
-                root.targetConfig.save();
-            }
-        }
-        ToggleRow {
-            text: qsTr("Disable gaps and rounding")
-            configNode: root.targetConfig.utilities.gameMode
-            propertyName: "disableHyprlandGaps"
-            checked: root.targetConfig.utilities.gameMode.disableHyprlandGaps
-            onToggled: {
-                root.targetConfig.utilities.gameMode.disableHyprlandGaps = checked;
-                root.targetConfig.save();
-            }
-        }
-        ToggleRow {
-            text: qsTr("Disable shadows")
-            configNode: root.targetConfig.utilities.gameMode
-            propertyName: "disableHyprlandShadows"
-            checked: root.targetConfig.utilities.gameMode.disableHyprlandShadows
-            onToggled: {
-                root.targetConfig.utilities.gameMode.disableHyprlandShadows = checked;
-                root.targetConfig.save();
-            }
-        }
+        // TODO: Niri has no runtime config mutation for animations/blur/gaps/shadows
         ToggleRow {
             text: qsTr("Disable window transparency")
             last: true

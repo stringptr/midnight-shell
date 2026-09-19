@@ -62,113 +62,39 @@ Item {
                     id: wsDelegate
                     required property int index
                     readonly property int workspaceId: index + 1
-                    // Fallback to Hypr.activeWsId if monitor activeWorkspace is not ready yet
-                    readonly property int activeWsId: Hypr.monitorFor(root.screen)?.activeWorkspace?.id ?? Hypr.activeWsId ?? 1
+                    readonly property int activeWsId: {
+                        const outputWs = Niri.allWorkspaces.filter(w => w.output === root.screen.name);
+                        const focused = outputWs.find(w => w.is_focused);
+                        return focused ? focused.id : (outputWs.length > 0 ? outputWs[0].id : 1);
+                    }
                     readonly property bool isActive: activeWsId === workspaceId
                     
                     property int activeDrags: 0
                     z: activeDrags > 0 ? 100 : 0
                     
-                    property list<var> windows: Hypr.toplevels.values.filter(t => {
-                        if (!t.workspace || t.workspace_id !== workspaceId) return false;
-                        const ipc = t.lastIpcObject;
-                        if (ipc) {
-                            if (ipc.mapped === false || ipc.hidden) return false;
-                            if (ipc.size && (ipc.size[0] <= 0 || ipc.size[1] <= 0)) return false;
-                        }
-                        return true;
+                    property list<var> windows: Niri.windows.filter(t => {
+                        return t.workspace_id === workspaceId;
                     })
                     
-                    property var hlMonitor: {
-                        let ws = Hypr.workspaces.values.find(w => w.id === workspaceId);
-                        if (ws && ws.monitor) return ws.monitor?.lastIpcObject;
-                        return Hypr.monitorFor(root.screen)?.lastIpcObject;
-                    }
-                    property bool isPortrait: hlMonitor && hlMonitor.transform % 2 !== 0
-                    property real mw: hlMonitor && hlMonitor.width ? (isPortrait ? hlMonitor.height : hlMonitor.width) : 1920
-                    property real mh: hlMonitor && hlMonitor.height ? (isPortrait ? hlMonitor.width : hlMonitor.height) : 1080
-                    property real mx: hlMonitor && hlMonitor.x ? hlMonitor.x : 0
-                    property real my: hlMonitor && hlMonitor.y ? hlMonitor.y : 0
+                    property var niriOutput: Niri.outputs[root.screen.name] ?? null
+                    property bool isPortrait: niriOutput && (niriOutput.transform === "90" || niriOutput.transform === "270" || niriOutput.transform === 1 || niriOutput.transform === 3)
+                    property real mw: niriOutput && niriOutput.mode ? (isPortrait ? niriOutput.mode.height : niriOutput.mode.width) : 1920
+                    property real mh: niriOutput && niriOutput.mode ? (isPortrait ? niriOutput.mode.width : niriOutput.mode.height) : 1080
+                    property real mx: niriOutput && niriOutput.location ? niriOutput.location.x : 0
+                    property real my: niriOutput && niriOutput.location ? niriOutput.location.y : 0
                     
-                    property real inactiveOffsetX: {
-                        if (isActive || windows.length === 0) return 0;
-                        let firstWindow = windows[0].lastIpcObject;
-                        if (!firstWindow || !firstWindow.at || !firstWindow.size) return 0;
-                        let center = firstWindow.at[0] - mx + firstWindow.size[0]/2;
-                        return Math.floor(center / mw) * mw;
-                    }
-                    property real inactiveOffsetY: {
-                        if (isActive || windows.length === 0) return 0;
-                        let firstWindow = windows[0].lastIpcObject;
-                        if (!firstWindow || !firstWindow.at || !firstWindow.size) return 0;
-                        let center = firstWindow.at[1] - my + firstWindow.size[1]/2;
-                        return Math.floor(center / mh) * mh;
-                        return Math.floor(center / mh) * mh;
-                    }
-                    
-                    property real contentMinX: {
-                        if (windows.length === 0) return 0;
-                        let min = mw;
-                        for (let i = 0; i < windows.length; i++) {
-                            let w = windows[i].lastIpcObject;
-                            if (w && w.at && w.size) {
-                                let left = Math.max(0, w.at[0] - mx - inactiveOffsetX);
-                                if (left < min) min = left;
-                            }
-                        }
-                        return min === mw ? 0 : min;
-                    }
-                    property real contentMaxX: {
-                        if (windows.length === 0) return mw;
-                        let max = 0;
-                        for (let i = 0; i < windows.length; i++) {
-                            let w = windows[i].lastIpcObject;
-                            if (w && w.at && w.size) {
-                                let right = Math.min(mw, w.at[0] - mx - inactiveOffsetX + w.size[0]);
-                                if (right > max) max = right;
-                            }
-                        }
-                        return max > 0 ? max : mw;
-                    }
-                    property real contentMinY: {
-                        if (windows.length === 0) return 0;
-                        let min = mh;
-                        for (let i = 0; i < windows.length; i++) {
-                            let w = windows[i].lastIpcObject;
-                            if (w && w.at && w.size) {
-                                let top = Math.max(0, w.at[1] - my - inactiveOffsetY);
-                                if (top < min) min = top;
-                            }
-                        }
-                        return min === mh ? 0 : min;
-                    }
-                    property real contentMaxY: {
-                        if (windows.length === 0) return mh;
-                        let max = 0;
-                        for (let i = 0; i < windows.length; i++) {
-                            let w = windows[i].lastIpcObject;
-                            if (w && w.at && w.size) {
-                                let bottom = Math.min(mh, w.at[1] - my - inactiveOffsetY + w.size[1]);
-                                if (bottom > max) max = bottom;
-                            }
-                        }
-                        return max > 0 ? max : mh;
-                    }
-                    
-                    property real targetMw: {
-                        if (windows.length === 0) return mw;
-                        let w = contentMaxX - contentMinX;
-                        if (w > mw * 0.8 && w < mw) return w;
-                        return mw;
-                    }
-                    property real targetMh: {
-                        if (windows.length === 0) return mh;
-                        let h = contentMaxY - contentMinY;
-                        if (h > mh * 0.8 && h < mh) return h;
-                        return mh;
-                    }
-                    property real targetMinX: targetMw < mw ? contentMinX : 0
-                    property real targetMinY: targetMh < mh ? contentMinY : 0
+                    // TODO: Niri doesn't expose absolute window positions (at/size)
+                    // Using output dimensions as fallback for workspace thumbnails
+                    property real inactiveOffsetX: 0
+                    property real inactiveOffsetY: 0
+                    property real contentMinX: 0
+                    property real contentMaxX: mw
+                    property real contentMinY: 0
+                    property real contentMaxY: mh
+                    property real targetMw: mw
+                    property real targetMh: mh
+                    property real targetMinX: 0
+                    property real targetMinY: 0
 
                     property real effectiveMw: targetMw
                     property real effectiveMh: targetMh
@@ -251,7 +177,7 @@ Item {
                         anchors.fill: parent
                         radius: Tokens.rounding.large
                         onClicked: {
-                            Hypr.dispatch(`workspace ${workspaceId}`);
+                            Niri.switchToWorkspace(workspaceId);
                             screenState.workspaceDrawer = false;
                         }
                     }
@@ -267,13 +193,13 @@ Item {
                             delegate: Item {
                                 id: windowContainer
                                 required property var modelData
-                                
-                                property var ipc: modelData.lastIpcObject
-                                
-                                property real rawLogicalX: ipc && ipc.at ? (ipc.at[0] - wsDelegate.mx - wsDelegate.inactiveOffsetX) : 0
-                                property real rawLogicalY: ipc && ipc.at ? (ipc.at[1] - wsDelegate.my - wsDelegate.inactiveOffsetY) : 0
-                                property real rawLogicalW: ipc && ipc.size ? ipc.size[0] : 0
-                                property real rawLogicalH: ipc && ipc.size ? ipc.size[1] : 0
+
+                                // Niri doesn't expose absolute window positions (at/size)
+                                // Using layout.window_size for dimensions, stubbing position
+                                property real rawLogicalX: 0
+                                property real rawLogicalY: 0
+                                property real rawLogicalW: modelData.layout?.window_size?.width ?? 200
+                                property real rawLogicalH: modelData.layout?.window_size?.height ?? 150
                                 
                                 property bool isDragging: dragArea.drag.active
                                 onIsDraggingChanged: {
@@ -346,11 +272,6 @@ Item {
                                             captureSource: {
                                                 const win = windowContainer.modelData;
                                                 if (!win || !win.wayland) return null;
-                                                const ipc = win.lastIpcObject;
-                                                if (ipc) {
-                                                    if (ipc.mapped === false || ipc.hidden) return null;
-                                                    if (ipc.size && (ipc.size[0] <= 0 || ipc.size[1] <= 0)) return null;
-                                                }
                                                 return win.wayland;
                                             }
                                             live: windowBg.visible
@@ -366,7 +287,7 @@ Item {
 
                                         IconImage {
                                             anchors.centerIn: parent
-                                            source: Icons.getAppIcon(windowContainer.modelData.lastIpcObject?.app_id ?? windowContainer.modelData.lastIpcObject?.class ?? "", "image-missing")
+                                            source: Icons.getAppIcon(windowContainer.modelData.app_id ?? "", "image-missing")
                                             width: 64
                                             height: 64
                                             scale: 20 / 64

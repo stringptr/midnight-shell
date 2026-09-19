@@ -84,7 +84,7 @@ QtObject {
             category: "shell"
         },
         {
-            label: qsTr("Hyprland"),
+            label: qsTr("Niri"),
             icon: "layers",
             description: qsTr("Window manager configuration"),
             category: "shell"

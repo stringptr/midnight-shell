@@ -22,7 +22,7 @@ https://github.com/user-attachments/assets/774a8872-4d95-45b9-a4b6-409d8394dadc
 
 This fork adds the following features on top of the official shell:
 
-- **Launchers**: Emoji Picker, Clipboard History, Window Switcher, and Hyprland Keybinds.
+- **Launchers**: Emoji Picker, Clipboard History, Window Switcher, and Niri Keybinds.
 - **Wallpapers**: GIF/video support with auto-pause, plus Wallhaven integration.
 - **Bad Apple Easter Egg**: A custom shader effect that plays Bad Apple directly through the shell's UI material by masking the background and preserving the shell's native translucent blur and shadow effects.
 - **Games**: Playable Chrome Dino runner embedded in the notification dock.
@@ -30,7 +30,7 @@ This fork adds the following features on top of the official shell:
 - **Bar**: MacOS-style app dock, Material workspace icons, DND toggle, and a live drag-and-drop components editor.
 - **Desktop**: Floating lyrics, Shimeji pets, dynamic wallpaper recoloring, and Bezel Mode.
 - **Lock Screen**: Configurable auto-lock on startup (`lockOnStartup`), redesigned profile and clock layout, and improved forecast UI.
-- **Hyprland**: Full support for the new Lua-based window focus and dispatching commands (`hl.dsp`).
+- **Niri**: Full support for Niri WM integration and IPC.
 - **QuickShare**: Supports the android feature, allowing file transfers between your devices (w/ avahi daemon)
 - **Polkit**: Supplies its own built-in polkit daemon, with animations.
   
@@ -158,12 +158,12 @@ For home-manager, you can also use the MiDnight's home manager module (explained
 ## Components
 
 -   Widgets: [`Quickshell`](https://quickshell.outfoxxed.me)
--   Window manager: [`Hyprland`](https://hyprland.org)
+-   Window manager: [`Niri`](https://github.com/YaLTeR/niri)
 -   Dots: [`caelestia`](https://github.com/caelestia-dots)
 
 ## Global Shortcuts
 
-All keybinds are accessible via Hyprland [global shortcuts](https://wiki.hypr.land/Configuring/Basics/Binds#dbus-global-shortcuts).
+All keybinds are accessible via Niri global shortcuts.
 
 ### Available Shortcuts
 
@@ -183,9 +183,9 @@ All keybinds are accessible via Hyprland [global shortcuts](https://wiki.hypr.la
 | `caelestia:showall` | Toggle all UI elements |
 | `caelestia:terminal` | Toggle terminal drawer |
 
-### Hyprland Keybind Examples
+### Niri Keybind Examples
 
-To bind these shortcuts in Hyprland, add to your config:
+To bind these shortcuts in Niri, add to your config:
 
 ```conf
 # Launcher and UI elements
@@ -266,14 +266,12 @@ You may omit `-d` from the command to keep the shell attached to the current ter
 though you likely want it to be detached (so it doesn't close when the terminal is closed).
 
 If using the [Caelestia dotfiles][dots-repo], the shell will be autostarted on login
-via a `hl.on("hyprland.start", ...)` function in the Hyprland config.
+via Niri's config.
 
 ### Shortcuts/IPC
 
-All keybinds are accessible via Hyprland [global shortcuts](https://wiki.hypr.land/Configuring/Basics/Binds#dbus-global-shortcuts).
+All keybinds are accessible via Niri global shortcuts.
 If using the entire caelestia dots, the keybinds are already configured for you.
-Otherwise, [this file](https://github.com/caelestia-dots/caelestia/blob/main/hypr/hyprland/keybinds.lua#L52-L67)
-contains an example on how to use global shortcuts.
 
 All IPC commands can be accessed via `caelestia shell ...`, for example:
 
@@ -333,7 +331,7 @@ You can configure per-monitor options in `~/.config/caelestia/monitors/<monitor_
 List the names of your available monitors by running:
 
 ```sh
-hyprctl monitors -j | jq -r '.[].name'
+niri msg -j outputs | jq -r 'keys[]'
 ```
 
 Options set in these files will **override** the respective options in the global config. Any options not present in
@@ -894,7 +892,6 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
         "profilePicShape": 9,
         "resourceUpdateInterval": 1000,
         "showDashboard": true,
-        "showHyprlandSplash": false,
         "showMedia": true,
         "showOnHover": true,
         "showPerformance": true,
@@ -1057,9 +1054,10 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
             },
             {
                 "command": [
-                    "hyprctl",
-                    "dispatch",
-                    "exit"
+                    "niri",
+                    "msg",
+                    "action",
+                    "quit"
                 ],
                 "dangerous": true,
                 "description": "Log out of the current session",
@@ -1231,9 +1229,10 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
                 "hibernate"
             ],
             "logout": [
-                "hyprctl",
-                "dispatch",
-                "exit"
+                "niri",
+                "msg",
+                "action",
+                "quit"
             ],
             "reboot": [
                 "loginctl",
@@ -1404,27 +1403,20 @@ The module automatically adds the shell to the path with **full functionality**.
 
 You can join the Caelestia Discord server for assistance and discussion [here][discord].
 
-### I want to make my own changes to the Hyprland config!
+### I want to make my own changes to the Niri config!
 
-Try disabling VRR in the hyprland config. You can do this by adding the following to `~/.config/caelestia/hypr-user.conf`:
-
-```conf
-misc {
-    vrr = 0
-}
-```
+You can add your custom Niri config to `~/.config/niri/config.kdl`.
 
 ### How do I enable blur for the Polkit dialog?
 
-Add the following layer rule to your `~/.config/caelestia/hypr-user.conf`:
+Add the following layer rule to your Niri config:
 
-```conf
-layerrule = no_anim true, match:namespace caelestia-polkit, blur true, ignore_alpha 0.1
+```kdl
+layer-rule {
+    match namespace="caelestia-polkit"
+    place-within-backdrop true
+}
 ```
-
-### I want to make my own changes to the hyprland config!
-
-You can add your custom hyprland configs to `~/.config/caelestia/hypr-user.conf`.
 
 ### I want to make my own changes to other stuff!
 

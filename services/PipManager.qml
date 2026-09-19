@@ -37,7 +37,7 @@ Singleton {
 
     // TODO: Niri monitor change tracking
     // Instantiator {
-    //     model: Hyprland.monitors.values
+    //     model: Niri.outputs
     //     Connections {
     //         target: modelData
     //         function onLastIpcObjectChanged(): void {

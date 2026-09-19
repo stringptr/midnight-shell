@@ -26,7 +26,7 @@ QtObject {
                 is_fullscreen: win.is_fullscreen ?? false,
                 is_maximized: win.is_maximized ?? false,
                 is_floating: win.is_floating ?? false,
-                // Stub fields for compatibility with callers expecting Hyprland shape
+                // Stub fields for compatibility
                 wayland: null,
                 size: [0, 0],
                 at: [0, 0],

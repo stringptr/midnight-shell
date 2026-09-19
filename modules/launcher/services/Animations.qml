@@ -71,16 +71,8 @@ QtObject {
             list.screenState.launcher = false;
         }
 
-        let userConfig = `${Paths.config}/hypr-user.lua`;
-        let script = `sed -i '/dofile(".*\\/animations\\/.*\\.lua")/d' "${userConfig}"\n`;
-        script += `[ -s "${userConfig}" ] && [ -n "$(tail -c1 "${userConfig}")" ] && echo "" >> "${userConfig}"\n`;
-
-        if (path !== "default") {
-            script += `echo "dofile(\\"${path}\\")" >> "${userConfig}"\n`;
-        }
-
-        script += "hyprctl reload\n";
-        Quickshell.execDetached(["sh", "-c", script]);
+        // TODO: Niri doesn't have Lua-based animation config or hyprctl reload
+        console.log("Animations: applyAnimation not yet supported on Niri (path: " + path + ")");
     }
 
     function query(searchText) {

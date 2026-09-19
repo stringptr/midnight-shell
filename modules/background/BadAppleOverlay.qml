@@ -15,7 +15,7 @@ Variants {
         id: root
         required property ShellScreen modelData
         screen: modelData
-        name: "drawers" // Use 'drawers' namespace so Hyprland blurs it automatically
+        name: "drawers" // Namespace for layer rules
         WlrLayershell.exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: WlrLayer.Bottom
         color: "transparent"

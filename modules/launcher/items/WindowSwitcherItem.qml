@@ -16,8 +16,7 @@ Item {
     required property var list
 
     function clicked(): void {
-        // TODO: Niri doesn't support focus by address; use window ID instead
-        Hypr.dispatch(`focuswindow address:0x${root.modelData.id}`);
+        Niri.focusWindow(root.modelData.id);
         root.list.screenState.launcher = false;
     }
 

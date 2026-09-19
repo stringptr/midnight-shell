@@ -257,7 +257,7 @@ Item {
             MaterialIcon {
                 id: wmIcon
 
-                visible: !Config.dashboard.showHyprlandSplash
+
                 anchors.verticalCenter: parent.verticalCenter
                 text: "select_window"
                 color: Colours.palette.m3onSecondaryContainer
