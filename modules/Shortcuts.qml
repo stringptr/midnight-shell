@@ -11,7 +11,7 @@ Scope {
     id: root
 
     property bool launcherInterrupted
-    readonly property bool hasFullscreen: Hypr.focusedWorkspace?.toplevels.values.some(t => t.lastIpcObject.fullscreen > 1) ?? false
+    readonly property bool hasFullscreen: Niri.windows.some(t => t.fullscreen) ?? false
 
     // qmllint disable unresolved-type
     CustomShortcut {

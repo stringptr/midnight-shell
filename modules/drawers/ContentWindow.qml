@@ -22,7 +22,6 @@ StyledWindow {
 
     readonly property ScreenState screenState: ShellState.forScreen(screen)
 
-    readonly property var monitor: Hypr.monitorFor(screen)
     // TODO: Niri has no special workspaces
     readonly property bool hasSpecialWorkspace: false
     readonly property bool hasFullscreenOnNormalWs: {
