@@ -6,7 +6,6 @@ import QtQuick.Controls
 import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
-import Quickshell.Hyprland
 import Quickshell.Widgets
 import Caelestia.Config
 import qs.components
@@ -63,15 +62,15 @@ Item {
                     id: wsDelegate
                     required property int index
                     readonly property int workspaceId: index + 1
-                    // Fallback to Hyprland.activeWorkspace if monitor activeWorkspace is not ready yet
-                    readonly property int activeWsId: Hypr.monitorFor(root.screen)?.activeWorkspace?.id ?? Hyprland.activeWorkspace?.id ?? 1
+                    // Fallback to Hypr.activeWsId if monitor activeWorkspace is not ready yet
+                    readonly property int activeWsId: Hypr.monitorFor(root.screen)?.activeWorkspace?.id ?? Hypr.activeWsId ?? 1
                     readonly property bool isActive: activeWsId === workspaceId
                     
                     property int activeDrags: 0
                     z: activeDrags > 0 ? 100 : 0
                     
-                    property list<var> windows: Hyprland.toplevels.values.filter(t => {
-                        if (!t.workspace || t.workspace.id !== workspaceId) return false;
+                    property list<var> windows: Hypr.toplevels.values.filter(t => {
+                        if (!t.workspace || t.workspace_id !== workspaceId) return false;
                         const ipc = t.lastIpcObject;
                         if (ipc) {
                             if (ipc.mapped === false || ipc.hidden) return false;
@@ -81,8 +80,8 @@ Item {
                     })
                     
                     property var hlMonitor: {
-                        let ws = Hyprland.workspaces.values.find(w => w.id === workspaceId);
-                        if (ws && ws.monitor) return ws.monitor.lastIpcObject;
+                        let ws = Hypr.workspaces.values.find(w => w.id === workspaceId);
+                        if (ws && ws.monitor) return ws.monitor?.lastIpcObject;
                         return Hypr.monitorFor(root.screen)?.lastIpcObject;
                     }
                     property bool isPortrait: hlMonitor && hlMonitor.transform % 2 !== 0
@@ -242,7 +241,8 @@ Item {
                         onDropped: drop => {
                             const client = drop.source;
                             if (client) {
-                                Hyprland.dispatch(Hyprland.usingLua ? `hl.dsp.window.move({ window = "address:0x${client.address}", workspace = "${workspaceId}", follow = false })` : `movetoworkspace ${workspaceId},address:0x${client.address}`);
+                                // TODO: Niri doesn't support move-to-workspace by address
+                                console.log("WorkspaceOverview: move to workspace not yet supported in Niri");
                             }
                         }
                     }
@@ -251,7 +251,7 @@ Item {
                         anchors.fill: parent
                         radius: Tokens.rounding.large
                         onClicked: {
-                            Hyprland.dispatch(Hyprland.usingLua ? `hl.dsp.focus({ workspace = "${workspaceId}" })` : `workspace ${workspaceId}`);
+                            Hypr.dispatch(`workspace ${workspaceId}`);
                             screenState.workspaceDrawer = false;
                         }
                     }
@@ -366,7 +366,7 @@ Item {
 
                                         IconImage {
                                             anchors.centerIn: parent
-                                            source: Icons.getAppIcon(windowContainer.modelData.lastIpcObject.class ?? "", "image-missing")
+                                            source: Icons.getAppIcon(windowContainer.modelData.lastIpcObject?.app_id ?? windowContainer.modelData.lastIpcObject?.class ?? "", "image-missing")
                                             width: 64
                                             height: 64
                                             scale: 20 / 64
@@ -415,7 +415,8 @@ Item {
                                             windowVisualProxy.x = 0;
                                             windowVisualProxy.y = 0;
                                         } else {
-                                            Hyprland.dispatch(Hyprland.usingLua ? `hl.dsp.focus({ window = "address:0x${windowContainer.modelData.address}" })` : `focuswindow address:0x${windowContainer.modelData.address}`);
+                                            // TODO: Niri doesn't support focus by address
+                                            console.log("WorkspaceOverview: focus by address not yet supported in Niri");
                                             screenState.workspaceDrawer = false;
                                         }
                                         wasDragged = false;

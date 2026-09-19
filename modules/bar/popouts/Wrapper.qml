@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Wayland
 import Caelestia.Config
 import qs.components
@@ -107,10 +106,13 @@ Item {
         }
     }
 
-    HyprlandFocusGrab {
-        active: root.isDetached
-        windows: [QsWindow.window]
-        onCleared: root.close()
+    // TODO: Niri has no HyprlandFocusGrab equivalent; using plain Item
+    Item {
+        id: focusGrab
+        property bool active: root.isDetached
+        onActiveChanged: {
+            if (!active) root.close();
+        }
     }
 
     Binding {

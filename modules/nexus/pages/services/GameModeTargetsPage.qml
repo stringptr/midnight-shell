@@ -10,7 +10,6 @@ import qs.components.images
 import qs.modules.nexus.common
 import qs.services
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Widgets
 import Caelestia
 
@@ -258,7 +257,7 @@ PageBase {
                         Layout.fillHeight: true
 
                         Connections {
-                            target: Hyprland.toplevels
+                            target: Hypr.toplevels
                             function onValuesChanged() {
                                 list.updateModel();
                             }
@@ -266,7 +265,7 @@ PageBase {
 
                         function updateModel() {
                             let toplevels = [];
-                            for (const toplevel of Hyprland.toplevels.values) {
+                            for (const toplevel of Hypr.toplevels.values) {
                                 if (toplevel.lastIpcObject) {
                                     toplevels.push(toplevel);
                                 }

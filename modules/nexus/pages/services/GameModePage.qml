@@ -9,7 +9,6 @@ import qs.utils
 import qs.services
 import qs.modules.nexus.common
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Widgets
 import Caelestia
 

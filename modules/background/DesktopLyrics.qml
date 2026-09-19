@@ -4,7 +4,6 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Caelestia.Config
 import Caelestia.Services
 import qs.components
@@ -33,8 +32,9 @@ Item {
     readonly property bool autoHideFullscreen: Config.background.desktopLyrics.autoHideFullscreen
     readonly property bool autoHideTiled: Config.background.desktopLyrics.autoHideTiled
     
-    readonly property bool hasFullscreen: Hypr.monitorFor(screen)?.activeWorkspace?.toplevels?.values.some(t => t.lastIpcObject?.fullscreen !== 0) ?? false
-    readonly property bool hasTiled: Hypr.monitorFor(screen)?.activeWorkspace?.toplevels?.values.some(t => !t.lastIpcObject?.floating && t.lastIpcObject?.fullscreen === 0) ?? false
+    // TODO: Niri fullscreen/tiled detection (adapted from Hyprland)
+    readonly property bool hasFullscreen: false
+    readonly property bool hasTiled: false
 
     readonly property bool shouldHide: (autoHideFullscreen && hasFullscreen) || (autoHideTiled && hasTiled)
 

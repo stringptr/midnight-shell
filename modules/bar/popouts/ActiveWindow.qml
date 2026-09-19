@@ -34,7 +34,7 @@ Item {
                 asynchronous: true
                 Layout.alignment: Qt.AlignVCenter
                 implicitSize: details.implicitHeight
-                source: Icons.getAppIcon(Hypr.activeToplevel?.lastIpcObject.class ?? "", "image-missing")
+                source: Icons.getAppIcon(Hypr.activeToplevel?.lastIpcObject?.app_id ?? Hypr.activeToplevel?.lastIpcObject?.class ?? "", "image-missing")
             }
 
             ColumnLayout {
@@ -53,7 +53,7 @@ Item {
 
                 StyledText {
                     Layout.fillWidth: true
-                    text: Hypr.activeToplevel?.lastIpcObject.class ?? ""
+                    text: Hypr.activeToplevel?.lastIpcObject?.app_id ?? Hypr.activeToplevel?.lastIpcObject?.class ?? ""
                     color: Colours.palette.m3onSurfaceVariant
                     elide: Text.ElideRight
                 }

@@ -80,7 +80,7 @@ Item {
         anchors.verticalCenter: bar.isHorizontal ? parent.verticalCenter : undefined
 
         animate: true
-        text: Icons.getAppCategoryIcon(Hypr.activeToplevel?.lastIpcObject.class, "desktop_windows")
+        text: Icons.getAppCategoryIcon(Hypr.activeToplevel?.lastIpcObject?.app_id ?? Hypr.activeToplevel?.lastIpcObject?.class, "desktop_windows")
         color: root.colour
     }
 

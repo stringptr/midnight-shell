@@ -113,18 +113,20 @@ ColumnLayout {
         Layout.rightMargin: Tokens.padding.large
         Layout.bottomMargin: Tokens.padding.large
 
-        spacing: root.client?.lastIpcObject.floating ? Tokens.spacing.medium : Tokens.spacing.small
+        // TODO: Niri has no floating property; adapt when Niri supports floating toggle
+        spacing: Tokens.spacing.small
 
         Button {
             color: Colours.palette.m3secondaryContainer
             onColor: Colours.palette.m3onSecondaryContainer
-            text: root.client?.lastIpcObject.floating ? Tr.tr("Tile") : Tr.tr("Float")
-            onClicked: Hypr.dispatch(Hypr.usingLua ? `hl.dsp.window.float({ window = "address:0x${root.client?.address}" })` : `togglefloating address:0x${root.client?.address}`)
+            // TODO: Niri floating toggle
+            text: Tr.tr("Float")
+            onClicked: console.log("Buttons: floating toggle not yet supported in Niri")
         }
 
         Loader {
             asynchronous: true
-            active: root.client?.lastIpcObject.floating ?? false
+            active: false // TODO: Niri has no pinned concept
             Layout.fillWidth: active
             Layout.leftMargin: active ? 0 : -parent.spacing
             Layout.rightMargin: active ? 0 : -parent.spacing
@@ -132,8 +134,8 @@ ColumnLayout {
             sourceComponent: Button {
                 color: Colours.palette.m3secondaryContainer
                 onColor: Colours.palette.m3onSecondaryContainer
-                text: root.client?.lastIpcObject.pinned ? Tr.tr("Unpin") : Tr.tr("Pin")
-                onClicked: Hypr.dispatch(Hypr.usingLua ? `hl.dsp.window.pin({ window = "address:0x${root.client?.address}" })` : `pin address:0x${root.client?.address}`)
+                text: Tr.tr("Pin")
+                onClicked: console.log("Buttons: pin not yet supported in Niri")
             }
         }
 
@@ -141,7 +143,7 @@ ColumnLayout {
             color: Colours.palette.m3errorContainer
             onColor: Colours.palette.m3onErrorContainer
             text: Tr.tr("Kill")
-            onClicked: Hypr.dispatch(Hypr.usingLua ? `hl.dsp.window.kill({ window = "address:0x${root.client?.address}" })` : `killwindow address:0x${root.client?.address}`)
+            onClicked: Niri.closeWindow(root.client?.id ?? 0)
         }
     }
 

@@ -3,7 +3,6 @@ pragma Singleton
 import QtQuick
 import QtQml
 import Quickshell
-import Quickshell.Hyprland
 import qs.services
 import Caelestia.Config
 
@@ -27,24 +26,25 @@ Singleton {
     }
 
     Connections {
-        target: Hyprland
-        function onRawEvent(event: HyprlandEvent): void {
-            const n = event.name;
-            if (n === "closewindow" || n === "openwindow" || n === "windowtitle" || n === "changefloatingmode" || n === "activewindow" || n === "configreloaded" || n === "workspace" || n === "focusedmon") {
-                updateDebouncer.restart();
-            }
+        target: Niri
+        function onWindowChanged(): void {
+            updateDebouncer.restart();
+        }
+        function onWindowsChanged(): void {
+            updateDebouncer.restart();
         }
     }
 
-    Instantiator {
-        model: Hyprland.monitors.values
-        Connections {
-            target: modelData
-            function onLastIpcObjectChanged(): void {
-                updateDebouncer.restart();
-            }
-        }
-    }
+    // TODO: Niri monitor change tracking
+    // Instantiator {
+    //     model: Hyprland.monitors.values
+    //     Connections {
+    //         target: modelData
+    //         function onLastIpcObjectChanged(): void {
+    //             updateDebouncer.restart();
+    //         }
+    //     }
+    // }
 
     Connections {
         target: GlobalConfig.services
@@ -82,7 +82,7 @@ Singleton {
         if (GlobalConfig.services.pipPaused) return;
 
         let foundPip = false;
-        const toplevels = Hyprland.toplevels.values;
+        const toplevels = Hypr.toplevels.values;
         for (let i = 0; i < toplevels.length; i++) {
             const t = toplevels[i];
             if (t && t.title && t.title.match(/Picture[- ]in[- ][Pp]icture/)) {
@@ -99,14 +99,15 @@ Singleton {
         }
     }
 
-    function movePip(t: HyprlandToplevel): void {
+    function movePip(t): void {
         if (GlobalConfig.services.pipPaused) return;
 
-        if (Hyprland.activeToplevel && Hyprland.activeToplevel.address === t.address) {
+        const activeTop = Hypr.activeToplevel;
+        if (activeTop && activeTop.id === t.id) {
             return; // Pause auto-alignment while the user is interacting with the window!
         }
 
-        const addr = "address:0x" + t.address;
+        const addr = "0x" + t.id;
         
         if (root.currentPipAddress !== addr) {
             root.lastPipX = -1;
@@ -115,10 +116,10 @@ Singleton {
             root.currentPipAddress = addr;
         }
 
-        let monitor = t.workspace?.monitor || Hyprland.focusedMonitor;
+        let monitor = Hypr.monitorFor(null); // TODO: get monitor from Niri
 
         if (GlobalConfig.services.pipFollowFocus) {
-            monitor = Hyprland.focusedMonitor;
+            monitor = Hypr.monitorFor(null); // TODO: focused monitor
         }
 
         if (!monitor) return;
@@ -229,14 +230,8 @@ Singleton {
         root.lastPipY = move_y;
         root.lastPipMoveTime = Date.now();
 
-        if (Hypr.usingLua) {
-            Hypr.dispatch(`hl.dsp.window.resize({ x = ${x_resize}, y = ${y_resize}, window = "${addr}" })`);
-            Hypr.dispatch(`hl.dsp.window.move({ x = ${move_x}, y = ${move_y}, relative = false, window = "${addr}" })`);
-            Hypr.dispatch(`hl.dsp.window.set_prop({ prop = "keep_aspect_ratio", value = "true", window = "${addr}" })`);
-        } else {
-            Hypr.dispatch(`resizewindowpixel exact ${x_resize} ${y_resize},${addr}`);
-            Hypr.dispatch(`movewindowpixel exact ${move_x} ${move_y},${addr}`);
-            Hypr.dispatch(`setprop ${addr} keep_aspect_ratio true`);
-        }
+        // TODO: Niri has no resizewindowpixel/movewindowpixel IPC
+        // Basic PiP positioning not yet supported in Niri
+        console.log("PipManager: pixel-perfect PiP positioning not yet supported in Niri");
     }
 }

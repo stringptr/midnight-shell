@@ -282,7 +282,7 @@ GridLayout {
                     required property var modelData
 
                     grade: 0
-                    text: Icons.getAppCategoryIcon(modelData.lastIpcObject.class, "terminal")
+                    text: Icons.getAppCategoryIcon(modelData.lastIpcObject?.app_id ?? modelData.lastIpcObject?.class, "terminal")
                     color: Colours.palette.m3onSurfaceVariant
                 }
             }
@@ -328,7 +328,7 @@ GridLayout {
                     required property var modelData
 
                     grade: 0
-                    text: Icons.getAppCategoryIcon(modelData.lastIpcObject.class, "terminal")
+                    text: Icons.getAppCategoryIcon(modelData.lastIpcObject?.app_id ?? modelData.lastIpcObject?.class, "terminal")
                     color: Colours.palette.m3onSurfaceVariant
                 }
             }

@@ -4,7 +4,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Wayland
 import Caelestia.Blobs
 import Caelestia.Config
@@ -23,19 +22,14 @@ StyledWindow {
 
     readonly property ScreenState screenState: ShellState.forScreen(screen)
 
-    readonly property HyprlandMonitor monitor: Hypr.monitorFor(screen)
-    readonly property bool hasSpecialWorkspace: (monitor?.lastIpcObject.specialWorkspace?.name.length ?? 0) > 0
-    readonly property bool hasFullscreenOnNormalWs: monitor?.activeWorkspace?.toplevels.values.some(t => t.lastIpcObject.fullscreen > 1) ?? false
-    readonly property bool hasFullscreen: {
-        if (hasSpecialWorkspace) {
-            const specialName = monitor?.lastIpcObject.specialWorkspace?.name;
-            if (!specialName)
-                return false;
-            const specialWs = Hypr.workspaces.values.find(ws => ws.name === specialName);
-            return specialWs?.toplevels.values.some(t => t.lastIpcObject.fullscreen > 1) ?? false;
-        }
-        return hasFullscreenOnNormalWs;
+    readonly property var monitor: Hypr.monitorFor(screen)
+    // TODO: Niri has no special workspaces
+    readonly property bool hasSpecialWorkspace: false
+    readonly property bool hasFullscreenOnNormalWs: {
+        const wins = Niri.getActiveWorkspaceWindows();
+        return wins ? wins.some(t => t.is_fullscreen) : false;
     }
+    readonly property bool hasFullscreen: hasFullscreenOnNormalWs
 
     property real fsTransitionProg: hasFullscreen ? 1 : 0
     readonly property real sdfBorderOffset: 2 * fsTransitionProg // SDFs joins are not exact, so offset by 2px to ensure nothing shows
@@ -50,7 +44,9 @@ StyledWindow {
         if (focusGrab.active || panels.popouts.isDetached)
             return 0;
 
-        if (monitor?.lastIpcObject.specialWorkspace?.name || monitor?.activeWorkspace?.lastIpcObject.windows > 0)
+        // TODO: Niri has no special workspace or window count check
+        const wins = Niri.getActiveWorkspaceWindows();
+        if (wins && wins.length > 0)
             return 0;
 
         const thresholds = [];
@@ -111,10 +107,11 @@ StyledWindow {
         win: root
     }
 
-    HyprlandFocusGrab {
+    // TODO: Niri has no HyprlandFocusGrab equivalent; using plain Item
+    Item {
         id: focusGrab
 
-        active: {
+        property bool active: {
             const s = root.screenState;
             const conf = root.contentItem.Config;
             if (s.workspaceDrawer) return true;
@@ -126,15 +123,16 @@ StyledWindow {
                 return true;
             return false;
         }
-        windows: [root]
-        onCleared: {
-            root.screenState.workspaceDrawer = false;
-            root.screenState.launcher = false;
-            root.screenState.session = false;
-            root.screenState.sidebar = false;
-            root.screenState.dashboard = false;
-            panels.popouts.hasCurrent = false;
-            bar.closeTray();
+        onActiveChanged: {
+            if (!active) {
+                root.screenState.workspaceDrawer = false;
+                root.screenState.launcher = false;
+                root.screenState.session = false;
+                root.screenState.sidebar = false;
+                root.screenState.dashboard = false;
+                panels.popouts.hasCurrent = false;
+                bar.closeTray();
+            }
         }
     }
 

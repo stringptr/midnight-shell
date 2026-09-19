@@ -32,8 +32,6 @@ qml_module(caelestia-services
         discordipc.cpp
         discordipc.hpp
         networkusage.cpp
-        hyprdevices.cpp
-        hyprextras.cpp
         QuickShare/QuickShareDiscovery.cpp
         QuickShare/QuickShareDiscovery.hpp
         QuickShare/QuickShareCrypto.cpp

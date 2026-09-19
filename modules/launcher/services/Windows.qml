@@ -1,7 +1,6 @@
 pragma Singleton
 
 import QtQuick
-import Quickshell.Hyprland
 import Caelestia.Config
 
 QtObject {
@@ -15,13 +14,14 @@ QtObject {
 
     function updateItems(): void {
         const windows = [];
-        for (const client of Hyprland.toplevels.values) {
+        for (const client of Hypr.toplevels.values) {
             const ipc = client.lastIpcObject;
             windows.push({
-                address: client.address,
+                id: client.id,
                 title: client.title || "",
-                class: ipc?.class || "",
+                class: ipc?.class || ipc?.app_id || "",
                 workspace: client.workspace?.name || "",
+                workspace_id: client.workspace_id ?? 0,
                 monitor: client.monitor?.name || "",
                 wayland: client.wayland,
                 size: ipc?.size || [0, 0],
@@ -37,15 +37,10 @@ QtObject {
     function query(search: string): var {
         let results = items;
         if (GlobalConfig.launcher.windowSwitcherActiveWorkspaceOnly) {
-            const monitor = Hyprland.focusedMonitor;
-            const specialWs = monitor?.lastIpcObject?.specialWorkspace?.name;
-            if (specialWs) {
-                results = results.filter(w => w.workspace === specialWs);
-            } else {
-                const activeWs = monitor?.activeWorkspace?.name;
-                if (activeWs) {
-                    results = results.filter(w => w.workspace === activeWs);
-                }
+            // TODO: Niri workspace filtering
+            const activeWs = Hypr.activeWsId;
+            if (activeWs) {
+                results = results.filter(w => w.workspace_id === activeWs);
             }
         }
         
@@ -55,12 +50,13 @@ QtObject {
         return results.filter(w => w.title.toLowerCase().includes(lower) || w.class.toLowerCase().includes(lower));
     }
 
-    function focusWindow(address: string): void {
-        Hyprland.dispatch(Hyprland.usingLua ? `hl.dsp.focus({ window = "address:0x${address}" })` : `focuswindow address:0x${address}`);
+    function focusWindow(id: int): void {
+        // TODO: Niri focus by window ID
+        console.log("Windows.focusWindow: not yet supported in Niri, id:", id);
     }
 
     Component.onCompleted: {
         updateItems();
-        Hyprland.toplevels.onValuesChanged.connect(updateItems);
+        // TODO: connect to Niri window change signals
     }
 }

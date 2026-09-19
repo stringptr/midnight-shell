@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Widgets
 import Caelestia
@@ -228,7 +227,7 @@ Item {
                                 }
                                 
                                 if (modelData?.toplevels.length > 0) {
-                                    Hypr.dispatch(Hypr.usingLua ? `hl.dsp.focus({ window = "address:0x${modelData?.toplevels[0].address}" })` : `focuswindow address:0x${modelData?.toplevels[0].address}`);
+                                    Hypr.dispatch(`focuswindow address:0x${modelData?.toplevels[0].id}`);
                                 } else if (modelData?.entry) {
                                     // Mark as launching
                                     let newLaunching = Object.assign({}, root.launchingApps);
@@ -276,11 +275,12 @@ Item {
                     ]
 
                     property bool isActive: {
-                        const activeTop = Hyprland.activeToplevel;
+                        const activeTop = Hypr.activeToplevel;
                         if (!activeTop) return false;
                         
-                        if (activeTop.lastIpcObject && modelData?.appClass) {
-                            const activeClass = (activeTop.lastIpcObject.class || activeTop.lastIpcObject.initialClass || "").toLowerCase();
+                        // Match by app_id (Niri) or class (Hyprland compat)
+                        if (modelData?.appClass) {
+                            const activeClass = (activeTop.app_id || activeTop.lastIpcObject?.class || "").toLowerCase();
                             const appId = modelData?.appClass.toLowerCase();
                             if (activeClass && (activeClass === appId || activeClass.includes(appId) || appId.includes(activeClass))) {
                                 return true;
@@ -288,7 +288,7 @@ Item {
                         }
                         
                         for (const top of modelData?.toplevels || []) {
-                            if (top.address && top.address === activeTop.address) return true;
+                            if (top.id && top.id === activeTop.id) return true;
                         }
                         return false;
                     }
@@ -454,10 +454,10 @@ Item {
             }
         }
         
-        for (const toplevel of Hyprland.toplevels.values) {
+        for (const toplevel of Hypr.toplevels.values) {
             const ipc = toplevel.lastIpcObject;
             if (!ipc) continue;
-            const appClass = ipc.class || ipc.initialClass;
+            const appClass = ipc.class || ipc.app_id || "";
             if (!appClass) continue;
             
             let found = false;
@@ -587,7 +587,7 @@ Item {
         root.modelUpdateTrigger += 1;
     }
 
-    property var _toplevels: Hyprland.toplevels.values
+    property var _toplevels: Hypr.toplevels.values
 
     on_ToplevelsChanged: {
         root.rebuildModel()
@@ -602,7 +602,7 @@ Item {
         onTriggered: root.rebuildModel()
     }
 
-    property var activeTop: Hyprland.activeToplevel
+    property var activeTop: Hypr.activeToplevel
 
     onActiveTopChanged: {
         root.rebuildModel()

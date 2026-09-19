@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Caelestia.Config
 import qs.components
 import qs.services
@@ -12,7 +11,7 @@ Item {
     required property ShellScreen screen
     property string clientAddress: ""
 
-    property HyprlandToplevel client: {
+    property var client: {
         if (clientAddress !== "") {
             for (const t of Hypr.toplevels.values) {
                 if (t.address === clientAddress) {

@@ -3,7 +3,6 @@ pragma Singleton
 import QtQuick
 import QtCore
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Services.UPower
 import Quickshell.Io
 import Caelestia
@@ -64,12 +63,12 @@ Singleton {
             newPaused = true;
             reason = "Battery";
         } else if (pauseOnWindowOverlap) {
-            const monitor = Hyprland.focusedMonitor;
-            const ws = monitor && monitor.activeWorkspace ? monitor.activeWorkspace : Hyprland.focusedWorkspace;
+            const monitor = Hypr.focusedMonitor;
+            const ws = Hypr.focusedWorkspace;
 
             if (ws) {
                 // Strictly filter global toplevels to ONLY the focused workspace
-                const toplevels = ws.toplevels.values;
+                const toplevels = Hypr.toplevels.values.filter(t => t.workspace_id === ws.id);
 
                 // Rule #3 — 2+ visible windows
                 if (toplevels.length >= 2) {
@@ -103,18 +102,13 @@ Singleton {
     }
 
     Connections {
-        target: Hyprland
-        function onFocusedWorkspaceChanged() {
+        target: Niri
+        function onActiveWorkspaceChanged() {
             root.recalculate();
         }
-        function onFocusedMonitorChanged() {
-            root.recalculate();
-        }
-        function onRawEvent(event) {
-            const n = event.name;
-            if (n.startsWith("workspace") || n.startsWith("activewindow") || n.startsWith("createworkspace") || n.startsWith("destroyworkspace") || ["fullscreen", "changefloatingmode", "minimize", "movewindow", "openwindow", "closewindow", "moveworkspace", "focusedmon"].includes(n)) {
-                recalcTimer.restart();
-            }
+        // TODO: Niri monitor focus change signal
+        function onWindowsChanged() {
+            recalcTimer.restart();
         }
     }
 

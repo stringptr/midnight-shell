@@ -1,7 +1,2 @@
-import Quickshell.Hyprland
-
-// qmllint disable unresolved-type
-GlobalShortcut {
-    // qmllint enable unresolved-type
-    appid: "caelestia"
-}
+// TODO: Niri uses config.kdl keybinds instead of GlobalShortcut
+// This component is a no-op placeholder for backward compatibility

@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Wayland
 import Caelestia
 import Caelestia.Config
@@ -17,7 +16,8 @@ Item {
     required property var list
 
     function clicked(): void {
-        Hyprland.dispatch(Hyprland.usingLua ? `hl.dsp.focus({ window = "address:0x${root.modelData.address}" })` : `focuswindow address:0x${root.modelData.address}`);
+        // TODO: Niri doesn't support focus by address; use window ID instead
+        Hypr.dispatch(`focuswindow address:0x${root.modelData.id}`);
         root.list.screenState.launcher = false;
     }
 
