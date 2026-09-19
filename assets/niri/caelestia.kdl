@@ -1,0 +1,13 @@
+// Layer rules for midnight-shell Niri port
+// Static compositor rules — loaded at Niri startup
+
+// Place quickshell backdrop behind all tiled windows
+layer-rule {
+    match namespace="quickshell:Backdrop"
+    place-within-backdrop true
+    opacity 1.0
+}
+
+// TODO: Niri does not support per-layer animation control.
+// Layer surfaces have no open/close animations by default.
+// The Hyprland "noanim" rule for caelestia-shimeji is not needed.

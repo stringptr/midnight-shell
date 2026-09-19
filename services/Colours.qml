@@ -29,8 +29,14 @@ Singleton {
     readonly property Transparency transparency: Transparency {}
     readonly property alias wallLuminance: analyser.luminance
 
-    property bool cooldownPending
-    property real lastBaseTransparency
+    // TODO: Niri uses static layer-rule KDL blocks, not dynamic Hyprland rule injection.
+    // Compositor blur is configured in assets/niri/caelestia.kdl.
+    // QML palette transparency (M3TPalette) is independent and still works.
+    function reloadHyprRules(): void {
+    }
+
+    function requestReloadHyprRules(): void {
+    }
 
     function getLuminance(c: color): real {
         if (c.r == 0 && c.g == 0 && c.b == 0)
@@ -90,64 +96,6 @@ Singleton {
         Quickshell.execDetached(["caelestia", "scheme", "set", "--notify", "-m", mode]);
     }
 
-    function reloadHyprRules(): void {
-        let rule, trEnabled;
-        const ignoreAlpha = Math.max(0, transparency.base - 0.03);
-        let messages = [];
-        if (Hypr.usingLua) {
-            rule = `eval hl.layer_rule({ match = { namespace = "%1" }, %2 = %3 })`;
-            trEnabled = transparency.enabled;
-            messages.push(rule.arg("caelestia-drawers").arg("blur").arg(trEnabled));
-            messages.push(rule.arg("caelestia-drawers").arg("ignore_alpha").arg(ignoreAlpha));
-            messages.push(rule.arg("caelestia-polkit").arg("blur").arg(trEnabled));
-            messages.push(rule.arg("caelestia-polkit").arg("ignore_alpha").arg(ignoreAlpha));
-            messages.push(rule.arg("caelestia-desktopLyricsOverlay").arg("blur").arg(trEnabled));
-            messages.push(rule.arg("caelestia-desktopLyricsOverlay").arg("ignore_alpha").arg(ignoreAlpha));
-            messages.push(`eval hl.layer_rule({ match = { namespace = "caelestia-shimeji" }, no_anim = true })`);
-        } else {
-            rule = "keyword layerrule %2 %3, match:namespace %1";
-            trEnabled = transparency.enabled ? 1 : 0;
-            messages.push(rule.arg("caelestia-drawers").arg("blur").arg(trEnabled));
-            messages.push(rule.arg("caelestia-drawers").arg("ignore_alpha").arg(ignoreAlpha));
-            messages.push(rule.arg("caelestia-polkit").arg("blur").arg(trEnabled));
-            messages.push(rule.arg("caelestia-polkit").arg("ignore_alpha").arg(ignoreAlpha));
-            messages.push(rule.arg("caelestia-desktopLyricsOverlay").arg("blur").arg(trEnabled));
-            messages.push(rule.arg("caelestia-desktopLyricsOverlay").arg("ignore_alpha").arg(ignoreAlpha));
-            messages.push("keyword layerrule noanim, match:namespace caelestia-shimeji");
-        }
-        Hypr.extras.batchMessage(messages);
-    }
-
-    function requestReloadHyprRules(): void {
-        if (cooldownTimer.running) {
-            root.cooldownPending = true;
-        } else {
-            root.reloadHyprRules();
-            cooldownTimer.restart();
-        }
-    }
-
-    Component.onCompleted: root.requestReloadHyprRules()
-
-    Connections {
-        function onConfigReloaded(): void {
-            root.reloadHyprRules();
-        }
-
-        target: Hypr
-    }
-
-    Connections {
-        target: GlobalConfig.utilities.toasts
-        ignoreUnknownSignals: true
-        function onTransparencyChanged(): void {
-            root.requestReloadHyprRules();
-        }
-        function onTransparencyBaseChanged(): void {
-            root.requestReloadHyprRules();
-        }
-    }
-
     FileView {
         path: `${Paths.state}/scheme.json`
         watchChanges: true
@@ -161,44 +109,10 @@ Singleton {
         source: Wallpapers.getThumbnailPath(Wallpapers.current)
     }
 
-    Timer {
-        id: cooldownTimer
-
-        interval: 30
-        onTriggered: {
-            if (root.cooldownPending) {
-                root.cooldownPending = false;
-                root.reloadHyprRules();
-                restart();
-            }
-        }
-    }
-
-    Timer {
-        id: cAnimCompleteTimer
-
-        interval: Tokens.anim.durations.expressiveSlowEffects
-        onTriggered: root.requestReloadHyprRules()
-    }
-
     component Transparency: QtObject {
         readonly property bool enabled: Tokens.transparency.enabled && !(GameMode.enabled && GlobalConfig.utilities.gameMode.disableShellTransparency)
         readonly property real base: Math.max(0, Math.min(1, Tokens.transparency.base - (root.light ? 0.1 : 0)))
         readonly property real layers: Math.max(0, Math.min(1, Tokens.transparency.layers))
-
-        onEnabledChanged: {
-            if (enabled)
-                root.requestReloadHyprRules();
-            else
-                cAnimCompleteTimer.start();
-        }
-        onBaseChanged: {
-            if (root.lastBaseTransparency > base)
-                root.requestReloadHyprRules();
-            else
-                cAnimCompleteTimer.start();
-            root.lastBaseTransparency = base;
-        }
     }
 
     component M3TPalette: QtObject {
