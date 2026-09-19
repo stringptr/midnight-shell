@@ -18,7 +18,7 @@ import qs.modules.nexus.pages.wallandstyle
 import qs.modules.nexus.pages.panels.taskbar
 import qs.modules.nexus.pages.background
 import qs.modules.nexus.pages.tokens
-import qs.modules.nexus.pages.hyprland
+
 
 QtObject {
     id: root
@@ -221,21 +221,8 @@ QtObject {
             }
         },
         Component {
-            // Hyprland
-            StackPage {
-                Component {
-                    HyprlandPage {}
-                }
-                Component {
-                    HyprVariablesPage {}
-                }
-                Component {
-                    HyprKeybindsPage {}
-                }
-                Component {
-                    UserConfigPage {}
-                }
-            }
+            // Niri (placeholder — no config page yet)
+            PlaceholderComp {}
         },
         Component {
             // Services
@@ -249,9 +236,7 @@ QtObject {
                 Component {
                     GameModePage {}
                 }
-                Component {
-                    GameModeTargetsPage {}
-                }
+
                 Component {
                     ArpcPage {}
                 }

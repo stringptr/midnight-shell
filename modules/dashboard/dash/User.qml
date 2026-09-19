@@ -268,12 +268,12 @@ Item {
                 id: wmText
 
                 anchors.verticalCenter: parent.verticalCenter
-                text: Config.dashboard.showHyprlandSplash && SysInfo.hyprlandSplashText !== "" ? SysInfo.hyprlandSplashText : SysInfo.wm + "..."
+                text: SysInfo.wm + "..."
                 color: Colours.palette.m3onSecondaryContainer
                 font: Tokens.font.body.builders.small.vaxis("slnt", -4).build()
                 width: Math.min(implicitWidth, Tokens.sizes.dashboard.userWidth - wmContainer.x - Tokens.padding.medium * 2 - (wmIcon.visible ? wmIcon.implicitWidth + wmLabel.spacing : 0) - Tokens.padding.extraLarge)
-                wrapMode: Config.dashboard.showHyprlandSplash ? Text.WordWrap : Text.NoWrap
-                maximumLineCount: Config.dashboard.showHyprlandSplash ? 2 : 1
+                wrapMode: Text.NoWrap
+                maximumLineCount: 1
                 elide: Text.ElideRight
             }
         }

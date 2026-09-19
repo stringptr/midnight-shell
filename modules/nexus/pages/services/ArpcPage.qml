@@ -466,20 +466,16 @@ PageBase {
                         Layout.fillHeight: true
 
                         Connections {
-                            target: Hypr.toplevels
-                            function onValuesChanged() {
+                            target: Niri
+                            function onWindowsChanged() {
                                 list.updateModel();
                             }
                         }
 
                         function updateModel() {
-                            let toplevels = [];
-                            for (const toplevel of Hypr.toplevels.values) {
-                                if (toplevel.lastIpcObject) {
-                                    toplevels.push(toplevel);
-                                }
-                            }
-                            list.model = toplevels.sort((a, b) => (a.lastIpcObject?.title ?? "").localeCompare(b.lastIpcObject?.title ?? ""));
+                            list.model = Niri.windows
+                                .filter(t => t.app_id)
+                                .sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""));
                         }
 
                         Component.onCompleted: updateModel()
@@ -498,7 +494,7 @@ PageBase {
 
                             onClicked: {
                                 row.popup.open = false;
-                                row.selected(modelData.lastIpcObject?.class ?? "");
+                                row.selected(modelData.app_id ?? "");
                             }
 
                             RowLayout {
@@ -511,7 +507,7 @@ PageBase {
                                 IconImage {
                                     asynchronous: true
                                     implicitSize: Math.round(Tokens.font.icon.large.pointSize * 1.8)
-                                    source: Quickshell.iconPath(windowItem.modelData.lastIpcObject?.class ?? "", "image-missing")
+                                    source: Quickshell.iconPath(windowItem.modelData.app_id ?? "", "image-missing")
                                 }
 
                                 ColumnLayout {
@@ -520,7 +516,7 @@ PageBase {
 
                                     StyledText {
                                         Layout.fillWidth: true
-                                        text: windowItem.modelData.lastIpcObject?.title ?? "Unknown"
+                                        text: windowItem.modelData.title ?? "Unknown"
                                         font: Tokens.font.body.small
                                         elide: Text.ElideRight
                                     }
@@ -528,7 +524,7 @@ PageBase {
                                     StyledText {
                                         Layout.fillWidth: true
                                         visible: text !== ""
-                                        text: windowItem.modelData.lastIpcObject?.class ?? ""
+                                        text: windowItem.modelData.app_id ?? ""
                                         color: Colours.palette.m3outline
                                         font: Tokens.font.label.small
                                         elide: Text.ElideRight

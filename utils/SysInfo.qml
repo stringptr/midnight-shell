@@ -27,18 +27,6 @@ Singleton {
     property string kernel
     property string hostname
     property string firmware
-    property string hyprlandSplashText: ""
-
-    Process {
-        running: true
-        command: ["hyprctl", "splash"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.hyprlandSplashText = text.trim();
-            }
-        }
-    }
-
     // DMI vendor/model, combined into a single human-readable device name
     property string boardVendor
     property string boardName
