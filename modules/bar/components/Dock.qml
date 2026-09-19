@@ -227,7 +227,7 @@ Item {
                                 }
                                 
                                 if (modelData?.toplevels.length > 0) {
-                                    Hypr.dispatch(`focuswindow address:0x${modelData?.toplevels[0].id}`);
+                                    Niri.focusWindow(modelData?.toplevels[0].id);
                                 } else if (modelData?.entry) {
                                     // Mark as launching
                                     let newLaunching = Object.assign({}, root.launchingApps);
@@ -275,12 +275,12 @@ Item {
                     ]
 
                     property bool isActive: {
-                        const activeTop = Hypr.activeToplevel;
+                        const activeTop = Niri.focusedWindow;
                         if (!activeTop) return false;
                         
-                        // Match by app_id (Niri) or class (Hyprland compat)
+                        // Match by app_id
                         if (modelData?.appClass) {
-                            const activeClass = (activeTop.app_id || activeTop.lastIpcObject?.class || "").toLowerCase();
+                            const activeClass = (activeTop.app_id || "").toLowerCase();
                             const appId = modelData?.appClass.toLowerCase();
                             if (activeClass && (activeClass === appId || activeClass.includes(appId) || appId.includes(activeClass))) {
                                 return true;
@@ -454,10 +454,8 @@ Item {
             }
         }
         
-        for (const toplevel of Hypr.toplevels.values) {
-            const ipc = toplevel.lastIpcObject;
-            if (!ipc) continue;
-            const appClass = ipc.class || ipc.app_id || "";
+        for (const toplevel of Niri.windows) {
+            const appClass = toplevel.app_id || "";
             if (!appClass) continue;
             
             let found = false;
@@ -587,7 +585,7 @@ Item {
         root.modelUpdateTrigger += 1;
     }
 
-    property var _toplevels: Hypr.toplevels.values
+    property var _toplevels: Niri.windows
 
     on_ToplevelsChanged: {
         root.rebuildModel()
@@ -602,7 +600,7 @@ Item {
         onTriggered: root.rebuildModel()
     }
 
-    property var activeTop: Hypr.activeToplevel
+    property var activeTop: Niri.focusedWindow
 
     onActiveTopChanged: {
         root.rebuildModel()

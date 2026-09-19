@@ -109,7 +109,7 @@ Item {
                 popouts.hasCurrent = false;
                 tray.expanded = true;
             }
-        } else if (id === "activeWindow" && Config.bar.popouts.activeWindow && Config.bar.activeWindow.showOnHover && Hypr.activeToplevel) {
+        } else if (id === "activeWindow" && Config.bar.popouts.activeWindow && Config.bar.activeWindow.showOnHover && Niri.focusedWindow) {
             const item = ch.item as Item;
             if (item) {
                 const relPos = pos - top;

@@ -12,9 +12,9 @@ GridLayout {
 
     readonly property bool isHorizontal: Config.bar.position === "top" || Config.bar.position === "bottom"
 
-    property real gap: Hypr.capsLock && Hypr.numLock ? parentSpacing : 0
-    property real capsSize: Hypr.capsLock ? (isHorizontal ? capslockIcon.implicitWidth : capslockIcon.implicitHeight) : 0
-    property real numSize: Hypr.numLock ? (isHorizontal ? numlockIcon.implicitWidth : numlockIcon.implicitHeight) : 0
+    property real gap: Niri.capsLock && Niri.numLock ? parentSpacing : 0
+    property real capsSize: Niri.capsLock ? (isHorizontal ? capslockIcon.implicitWidth : capslockIcon.implicitHeight) : 0
+    property real numSize: Niri.numLock ? (isHorizontal ? numlockIcon.implicitWidth : numlockIcon.implicitHeight) : 0
 
     columns: isHorizontal ? -1 : 1
     rows: isHorizontal ? 1 : -1
@@ -50,8 +50,8 @@ GridLayout {
 
             anchors.centerIn: parent
 
-            scale: Hypr.capsLock ? 1 : 0.5
-            opacity: Hypr.capsLock ? 1 : 0
+            scale: Niri.capsLock ? 1 : 0.5
+            opacity: Niri.capsLock ? 1 : 0
 
             text: "keyboard_capslock_badge"
             color: root.colour
@@ -79,8 +79,8 @@ GridLayout {
 
             anchors.centerIn: parent
 
-            scale: Hypr.numLock ? 1 : 0.5
-            opacity: Hypr.numLock ? 1 : 0
+            scale: Niri.numLock ? 1 : 0.5
+            opacity: Niri.numLock ? 1 : 0
 
             text: "looks_one"
             color: root.colour

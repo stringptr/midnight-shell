@@ -36,11 +36,11 @@ ColumnLayout {
             spacing: Tokens.spacing.small
 
             StyledText {
-                text: qsTr("Capslock: %1").arg(Hypr.capsLock ? "Enabled" : "Disabled")
+                text: qsTr("Capslock: %1").arg(Niri.capsLock ? "Enabled" : "Disabled")
             }
 
             StyledText {
-                text: qsTr("Numlock: %1").arg(Hypr.numLock ? "Enabled" : "Disabled")
+                text: qsTr("Numlock: %1").arg(Niri.numLock ? "Enabled" : "Disabled")
             }
         }
     }

@@ -68,7 +68,7 @@ GridLayout {
         StyledText {
             animate: true
             text: {
-                const ws = Hypr.workspaces.values.find(w => w.id === root.ws);
+                const ws = Niri.allWorkspaces.find(w => w.id === root.ws);
                 const wsName = !ws || ws.name == root.ws ? root.ws : ws.name[0];
                 let displayName = wsName.toString();
                 if (Config.bar.workspaces.capitalisation === BarWorkspaceCapitalisation.Upper) {
@@ -272,7 +272,7 @@ GridLayout {
                 model: ScriptModel {
                     values: {
                         const ws = root.ws;
-                        const windows = Hypr.toplevels.values.filter(c => c.workspace?.id === ws);
+                        const windows = Niri.windows.filter(c => c.workspace_id === ws);
                         const maxIcons = root.Config.bar.workspaces.maxWindowIcons;
                         return maxIcons > 0 ? windows.slice(0, maxIcons) : windows;
                     }
@@ -282,7 +282,7 @@ GridLayout {
                     required property var modelData
 
                     grade: 0
-                    text: Icons.getAppCategoryIcon(modelData.lastIpcObject?.app_id ?? modelData.lastIpcObject?.class, "terminal")
+                    text: Icons.getAppCategoryIcon(modelData.app_id, "terminal")
                     color: Colours.palette.m3onSurfaceVariant
                 }
             }
@@ -318,7 +318,7 @@ GridLayout {
             Repeater {
                 model: ScriptModel {
                     values: {
-                        const windows = Hypr.toplevelsForWs(root.ws);
+                        const windows = Niri.getWindowsByWorkspaceId(root.ws);
                         const maxIcons = root.Config.bar.workspaces.maxWindowIcons;
                         return maxIcons > 0 ? windows.slice(0, maxIcons) : windows;
                     }
@@ -328,7 +328,7 @@ GridLayout {
                     required property var modelData
 
                     grade: 0
-                    text: Icons.getAppCategoryIcon(modelData.lastIpcObject?.app_id ?? modelData.lastIpcObject?.class, "terminal")
+                    text: Icons.getAppCategoryIcon(modelData.app_id, "terminal")
                     color: Colours.palette.m3onSurfaceVariant
                 }
             }

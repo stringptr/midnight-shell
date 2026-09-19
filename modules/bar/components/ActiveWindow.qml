@@ -15,7 +15,7 @@ Item {
     property color colour: Colours.palette.m3primary
 
     readonly property string windowTitle: {
-        const title = Hypr.activeToplevel?.title;
+        const title = Niri.focusedWindowTitle;
         if (!title)
             return Tr.trCtx("Desktop", "shown when no window is focused");
         if (Config.bar.activeWindow.compact) {
@@ -64,7 +64,7 @@ Item {
                 const popouts = root.bar.popouts;
                 if (popouts.hasCurrent) {
                     popouts.hasCurrent = false;
-                } else if (Hypr.activeToplevel) {
+                } else if (Niri.focusedWindow) {
                     popouts.currentName = "activewindow";
                     popouts.currentCenter = bar.isHorizontal ? root.mapToItem(null, root.implicitWidth / 2, 0).x : root.mapToItem(null, 0, root.implicitHeight / 2).y;
                     popouts.hasCurrent = true;
@@ -80,7 +80,7 @@ Item {
         anchors.verticalCenter: bar.isHorizontal ? parent.verticalCenter : undefined
 
         animate: true
-        text: Icons.getAppCategoryIcon(Hypr.activeToplevel?.lastIpcObject?.app_id ?? Hypr.activeToplevel?.lastIpcObject?.class, "desktop_windows")
+        text: Icons.getAppCategoryIcon(Niri.focusedWindow?.app_id ?? Niri.focusedWindowClass, "desktop_windows")
         color: root.colour
     }
 

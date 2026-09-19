@@ -12,7 +12,7 @@ Item {
 
     required property PopoutState popouts
 
-    implicitWidth: Hypr.activeToplevel ? child.implicitWidth : -Tokens.padding.extraLargeIncreased
+    implicitWidth: Niri.focusedWindow ? child.implicitWidth : -Tokens.padding.extraLargeIncreased
     implicitHeight: child.implicitHeight
 
     Column {
@@ -34,7 +34,7 @@ Item {
                 asynchronous: true
                 Layout.alignment: Qt.AlignVCenter
                 implicitSize: details.implicitHeight
-                source: Icons.getAppIcon(Hypr.activeToplevel?.lastIpcObject?.app_id ?? Hypr.activeToplevel?.lastIpcObject?.class ?? "", "image-missing")
+                source: Icons.getAppIcon(Niri.focusedWindow?.app_id ?? "", "image-missing")
             }
 
             ColumnLayout {
@@ -46,14 +46,14 @@ Item {
 
                 StyledText {
                     Layout.fillWidth: true
-                    text: Hypr.activeToplevel?.title ?? ""
+                    text: Niri.focusedWindowTitle ?? ""
                     font: Tokens.font.body.medium
                     elide: Text.ElideRight
                 }
 
                 StyledText {
                     Layout.fillWidth: true
-                    text: Hypr.activeToplevel?.lastIpcObject?.app_id ?? Hypr.activeToplevel?.lastIpcObject?.class ?? ""
+                    text: Niri.focusedWindow?.app_id ?? ""
                     color: Colours.palette.m3onSurfaceVariant
                     elide: Text.ElideRight
                 }
@@ -91,13 +91,10 @@ Item {
                 id: preview
 
                 captureSource: {
-                    const top = Hypr.activeToplevel; // qmllint disable unresolved-type
+                    const top = Niri.focusedWindow; // qmllint disable unresolved-type
                     if (!top || !top.wayland) return null;
-                    const ipc = top.lastIpcObject;
-                    if (ipc) {
-                        if (ipc.mapped === false || ipc.hidden) return null;
-                        if (ipc.size && (ipc.size[0] <= 0 || ipc.size[1] <= 0)) return null;
-                    }
+                    const size = top.layout?.window_size;
+                    if (size && (size[0] <= 0 || size[1] <= 0)) return null;
                     return top.wayland;
                 }
                 live: visible

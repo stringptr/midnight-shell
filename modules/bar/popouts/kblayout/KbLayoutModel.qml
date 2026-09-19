@@ -1,10 +1,12 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import Quickshell
 import Quickshell.Io
 import Caelestia
 import Caelestia.Config
 import Caelestia.I18n
+import qs.services
 
 // TODO: handle this better later
 
@@ -19,17 +21,26 @@ Item {
 
     function start() {
         xkbXmlBase.running = true;
-        getKbLayoutOpt.running = true;
+        fetchLayoutsFromNiri.running = true;
     }
 
     function refresh() {
         _notifiedLimit = false;
-        getKbLayoutOpt.running = true;
+        fetchLayoutsFromNiri.running = true;
     }
 
     function switchTo(idx) {
-        switchProc.command = ["hyprctl", "switchxkblayout", "all", String(idx)];
-        switchProc.running = true;
+        // Niri supports "switch-layout next/prev"; calculate shortest cyclic path
+        const arr = Niri.kbLayoutsArray;
+        if (!arr || arr.length === 0) return;
+        const current = Niri.kbLayoutIndex;
+        const n = arr.length;
+        const diff = ((idx - current) % n + n) % n;
+        const cmd = diff <= n / 2 ? "next" : "prev";
+        const steps = diff <= n / 2 ? diff : n - diff;
+        for (let i = 0; i < steps; i++) {
+            Quickshell.execDetached(["niri", "msg", "action", "switch-layout", cmd]);
+        }
     }
 
     function _buildXmlMap(xml) {
@@ -63,7 +74,7 @@ Item {
             }
             layoutsModel.clear();
             tmp.forEach(t => layoutsModel.append(t));
-            fetchActiveLayouts.running = true;
+            _rebuildVisible();
         }
     }
 
@@ -78,21 +89,19 @@ Item {
         return Tr.trCtx("%1 (%2)", "keyboard layout language and code").arg(lang).arg(code);
     }
 
-    function _setLayouts(raw) {
-        const parts = raw.split(",").map(s => s.trim()).filter(Boolean);
+    function _setLayouts(layouts) {
         layoutsModel.clear();
-
         const seen = new Set();
         let idx = 0;
 
-        for (const p of parts) {
-            if (seen.has(p))
+        for (const token of layouts) {
+            if (!token || seen.has(token))
                 continue;
-            seen.add(p);
+            seen.add(token);
             layoutsModel.append({
                 layoutIndex: idx,
-                token: p,
-                label: _pretty(p)
+                token: token,
+                label: _pretty(token)
             });
             idx++;
         }
@@ -156,70 +165,32 @@ Item {
     }
 
     Process {
-        id: getKbLayoutOpt
+        id: fetchLayoutsFromNiri
 
-        command: ["hyprctl", "-j", "getoption", "input:kb_layout"]
+        // Fetch keyboard layout info directly from Niri IPC
+        command: ["niri", "msg", "keyboard-layouts"]
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
                     const j = JSON.parse(text);
-                    const raw = (j?.str || j?.value || "").toString().trim();
-                    if (raw.length) {
-                        model._setLayouts(raw);
-                        fetchActiveLayouts.running = true;
+                    const names = j?.names || [];
+                    if (names.length > 0) {
+                        model._setLayouts(names);
+                        model.activeIndex = j?.current_idx ?? 0;
+                        model.activeLabel = (model.activeIndex >= 0 && model.activeIndex < layoutsModel.count) ? layoutsModel.get(model.activeIndex).label : "";
+                        model._rebuildVisible();
                         return;
                     }
                 } catch (e) {}
-                fetchLayoutsFromDevices.running = true;
-            }
-        }
-    }
-
-    Process {
-        id: fetchLayoutsFromDevices
-
-        command: ["hyprctl", "-j", "devices"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    const dev = JSON.parse(text);
-                    const kb = dev?.keyboards?.find(k => k.main) || dev?.keyboards?.[0];
-                    const raw = (kb?.layout || "").trim();
-                    if (raw.length)
-                        model._setLayouts(raw);
-                } catch (e) {}
-                fetchActiveLayouts.running = true;
-            }
-        }
-    }
-
-    Process {
-        id: fetchActiveLayouts
-
-        command: ["hyprctl", "-j", "devices"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    const dev = JSON.parse(text);
-                    const kb = dev?.keyboards?.find(k => k.main) || dev?.keyboards?.[0];
-                    const idx = kb?.active_layout_index ?? -1;
-
-                    model.activeIndex = idx >= 0 ? idx : -1;
-                    model.activeLabel = (idx >= 0 && idx < layoutsModel.count) ? layoutsModel.get(idx).label : "";
-                } catch (e) {
-                    model.activeIndex = -1;
-                    model.activeLabel = "";
+                // Fallback: try Niri properties
+                const layouts = Niri.kbLayoutsArray;
+                if (layouts && layouts.length > 0) {
+                    model._setLayouts(layouts);
+                    model.activeIndex = Niri.kbLayoutIndex;
+                    model.activeLabel = (model.activeIndex >= 0 && model.activeIndex < layoutsModel.count) ? layoutsModel.get(model.activeIndex).label : "";
+                    model._rebuildVisible();
                 }
-
-                model._rebuildVisible();
             }
         }
-    }
-
-    Process {
-        id: switchProc
-
-        onRunningChanged: if (!running)
-            fetchActiveLayouts.running = true
     }
 }

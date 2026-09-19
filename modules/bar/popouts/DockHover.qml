@@ -74,7 +74,7 @@ RowLayout {
         delegate: StyledRect {
             required property var modelData
 
-            readonly property real windowRatio: (modelData.lastIpcObject && modelData.lastIpcObject.size[0] > 0) ? (modelData.lastIpcObject.size[1] / modelData.lastIpcObject.size[0]) : 0.75
+            readonly property real windowRatio: (modelData.layout?.window_size && modelData.layout.window_size[0] > 0) ? (modelData.layout.window_size[1] / modelData.layout.window_size[0]) : 0.75
             readonly property real targetWidth: Tokens.sizes.bar.windowPreviewSize
             readonly property real targetHeight: Math.max(50, Math.min(targetWidth * windowRatio, Tokens.sizes.bar.windowPreviewSize * 1.5))
 
@@ -124,7 +124,7 @@ RowLayout {
                             radius: Tokens.rounding.small
                             // Set the specific client to be used by the window info popout
                             onClicked: {
-                                root.popouts.selectedClientAddress = modelData.address;
+                                root.popouts.selectedClientAddress = String(modelData.id);
                                 root.popouts.detachRequested("winfo");
                             }
                         }
@@ -147,10 +147,10 @@ RowLayout {
                         StateLayer {
                             anchors.fill: parent
                             radius: Tokens.rounding.small
-                            onClicked: {
-                                Hypr.dispatch(Hypr.usingLua ? `hl.dsp.window.close({ window = "address:0x${modelData.address}" })` : `closewindow address:0x${modelData.address}`);
-                                root.popouts.hasCurrent = false;
-                            }
+                                onClicked: {
+                                    Niri.closeWindow(modelData.id);
+                                    root.popouts.hasCurrent = false;
+                                }
                         }
 
                         MaterialIcon {
@@ -173,7 +173,7 @@ RowLayout {
                         color: "transparent"
 
                         onClicked: {
-                            Hypr.dispatch(Hypr.usingLua ? `hl.dsp.focus({ window = "address:0x${modelData.address}" })` : `focuswindow address:0x${modelData.address}`);
+                            Niri.focusWindow(modelData.id);
                             root.popouts.hasCurrent = false;
                         }
 
@@ -185,11 +185,8 @@ RowLayout {
                             SafeScreencopy {
                                 captureSource: {
                                     if (!modelData || !modelData.wayland) return null; // qmllint disable unresolved-type
-                                    const ipc = modelData.lastIpcObject;
-                                    if (ipc) {
-                                        if (ipc.mapped === false || ipc.hidden) return null;
-                                        if (ipc.size && (ipc.size[0] <= 0 || ipc.size[1] <= 0)) return null;
-                                    }
+                                    const size = modelData.layout?.window_size;
+                                    if (size && (size[0] <= 0 || size[1] <= 0)) return null;
                                     return modelData.wayland;
                                 }
                                 live: visible
