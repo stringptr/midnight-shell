@@ -23,11 +23,7 @@ Singleton {
     property bool loaded
 
     function hasFullscreen(): bool {
-        for (const monitor of Hypr.monitors.values) {
-            if (monitor?.activeWorkspace?.toplevels.values.some(t => t.lastIpcObject.fullscreen > 1))
-                return true;
-        }
-        return false;
+        return Niri.windows.some(t => t.fullscreen) ?? false;
     }
 
     function shouldShowPopup(): bool {

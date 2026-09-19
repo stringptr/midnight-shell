@@ -69,9 +69,9 @@ Item {
     }
 
     Connections {
-        target: Hypr.toplevels
+        target: Niri
         ignoreUnknownSignals: true
-        function onValuesChanged() { root.updatePresence(); }
+        function onWindowsChanged() { root.updatePresence(); }
     }
 
     Connections {
@@ -121,8 +121,8 @@ Item {
         let topTargetClass = "";
         let topTargetTitle = "";
 
-        for (const toplevel of Hypr.toplevels.values) {
-            let winClass = toplevel.lastIpcObject?.class ?? toplevel.lastIpcObject?.app_id ?? "";
+        for (const toplevel of Niri.windows) {
+            let winClass = toplevel.app_id ?? "";
             let winTitle = toplevel.title ?? "";
 
             if (GlobalConfig.services.arpcSteamAutoDetect && winClass.startsWith("steam_app_")) {

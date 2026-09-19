@@ -21,9 +21,9 @@ Singleton {
     }
 
     function forActive(): ScreenState {
-        const mon = Hypr.focusedMonitor;
+        const monName = Niri.focusedMonitorName;
         for (const s of states.instances)
-            if (Hypr.monitorFor(s.modelData) === mon)
+            if (s.modelData.name === monName)
                 return s;
         return null;
     }
@@ -36,9 +36,9 @@ Singleton {
     }
 
     function componentsForActive(): Components {
-        const mon = Hypr.focusedMonitor;
+        const monName = Niri.focusedMonitorName;
         for (const c of components.instances)
-            if (Hypr.monitorFor(c.modelData) === mon)
+            if (c.modelData.name === monName)
                 return c;
         return null;
     }

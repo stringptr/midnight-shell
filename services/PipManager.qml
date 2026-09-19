@@ -82,7 +82,7 @@ Singleton {
         if (GlobalConfig.services.pipPaused) return;
 
         let foundPip = false;
-        const toplevels = Hypr.toplevels.values;
+        const toplevels = Niri.windows;
         for (let i = 0; i < toplevels.length; i++) {
             const t = toplevels[i];
             if (t && t.title && t.title.match(/Picture[- ]in[- ][Pp]icture/)) {
@@ -102,7 +102,7 @@ Singleton {
     function movePip(t): void {
         if (GlobalConfig.services.pipPaused) return;
 
-        const activeTop = Hypr.activeToplevel;
+        const activeTop = Niri.focusedWindow;
         if (activeTop && activeTop.id === t.id) {
             return; // Pause auto-alignment while the user is interacting with the window!
         }
@@ -116,41 +116,41 @@ Singleton {
             root.currentPipAddress = addr;
         }
 
-        let monitor = Hypr.monitorFor(null); // TODO: get monitor from Niri
+        let output = Niri.outputs[Niri.focusedMonitorName];
 
         if (GlobalConfig.services.pipFollowFocus) {
-            monitor = Hypr.monitorFor(null); // TODO: focused monitor
+            output = Niri.outputs[Niri.focusedMonitorName];
         }
 
-        if (!monitor) return;
+        if (!output) return;
 
-        if (root.lastPipMonitor !== monitor.name) {
+        if (root.lastPipMonitor !== output.name) {
             root.tempPipPosition = "";
-            root.lastPipMonitor = monitor.name;
+            root.lastPipMonitor = output.name;
         }
 
-        const transform = monitor.lastIpcObject?.transform || 0;
+        const transform = output.transform || 0;
         const isVertical = (transform % 2 !== 0);
 
-        const rawWidth = monitor.width;
-        const rawHeight = monitor.height;
+        const rawWidth = output.mode?.width ?? 1920;
+        const rawHeight = output.mode?.height ?? 1080;
 
-        const monitor_width = (isVertical ? rawHeight : rawWidth) / monitor.scale;
-        const monitor_height = (isVertical ? rawWidth : rawHeight) / monitor.scale;
+        const monitor_width = (isVertical ? rawHeight : rawWidth) / (output.scale ?? 1);
+        const monitor_height = (isVertical ? rawWidth : rawHeight) / (output.scale ?? 1);
 
-        const sizeX = (t.lastIpcObject && t.lastIpcObject.size && t.lastIpcObject.size[0]) ? t.lastIpcObject.size[0] : 0;
-        const sizeY = (t.lastIpcObject && t.lastIpcObject.size && t.lastIpcObject.size[1]) ? t.lastIpcObject.size[1] : 0;
+        const sizeX = t.layout?.window_size?.[0] ?? 0;
+        const sizeY = t.layout?.window_size?.[1] ?? 0;
 
-        const currentX = (t.lastIpcObject && t.lastIpcObject.at && t.lastIpcObject.at.length > 0) ? t.lastIpcObject.at[0] : null;
-        const currentY = (t.lastIpcObject && t.lastIpcObject.at && t.lastIpcObject.at.length > 1) ? t.lastIpcObject.at[1] : null;
+        const currentX = null; // TODO: Niri does not expose absolute window position
+        const currentY = null;
 
         if (currentX !== null && currentY !== null && root.lastPipX !== -1 && root.lastPipY !== -1 && (Date.now() - root.lastPipMoveTime > 1000)) {
             const diffX = Math.abs(currentX - root.lastPipX);
             const diffY = Math.abs(currentY - root.lastPipY);
 
             if (diffX > 100 || diffY > 100) {
-                const relX = currentX - monitor.x;
-                const relY = currentY - monitor.y;
+                const relX = currentX - (output.location?.x ?? 0);
+                const relY = currentY - (output.location?.y ?? 0);
 
                 const centerX = relX + sizeX / 2;
                 const centerY = relY + sizeY / 2;
@@ -191,7 +191,7 @@ Singleton {
         let barSize = 42;
         if (typeof Tokens !== "undefined" && typeof GlobalConfig !== "undefined") {
             const padding = Math.max(GlobalConfig.appearance.padding.small, GlobalConfig.border.thickness);
-            barSize = Tokens.forScreen(monitor.name).sizes.bar.innerWidth + padding * 2;
+            barSize = Tokens.forScreen(output.name).sizes.bar.innerWidth + padding * 2;
         }
 
         if (bPos === "left") res_left += barSize;
@@ -202,8 +202,8 @@ Singleton {
         const avail_w = monitor_width - res_left - res_right - x_resize;
         const avail_h = monitor_height - res_top - res_bottom - y_resize;
 
-        let base_x = monitor.x + res_left;
-        let base_y = monitor.y + res_top;
+        let base_x = (output.location?.x ?? 0) + res_left;
+        let base_y = (output.location?.y ?? 0) + res_top;
 
         const pos = root.tempPipPosition || GlobalConfig.services.pipPosition || "";
 

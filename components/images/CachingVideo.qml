@@ -26,25 +26,21 @@ Item {
             return false;
 
         const checkToplevels = toplevels => {
-            if (pauseOnFullscreen && toplevels.some(t => t?.lastIpcObject?.fullscreen > 1))
+            if (pauseOnFullscreen && toplevels.some(t => t?.fullscreen))
                 return true;
-            if (pauseOnTiled && toplevels.some(t => !t?.lastIpcObject?.floating && !t?.lastIpcObject?.fullscreen))
+            if (pauseOnTiled && toplevels.some(t => !t?.floating && !t?.fullscreen))
                 return true;
             return false;
         };
 
         if (GlobalConfig.background.videoWallpaperPauseOnAllDisplays) {
-            return Hypr.monitors.values.some(monitor => checkToplevels(monitor?.activeWorkspace?.toplevels?.values || []));
+            return checkToplevels(Niri.windows);
         }
 
         if (!root.screen)
             return false;
 
-        const monitor = Hypr.monitorFor(root.screen);
-        if (!monitor)
-            return false;
-
-        return checkToplevels(monitor.activeWorkspace?.toplevels?.values || []);
+        return checkToplevels(Niri.windows.filter(t => t.output === root.screen.name));
     }
 
     onShouldPauseChanged: applyPauseState()

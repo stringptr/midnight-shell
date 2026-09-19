@@ -15,7 +15,7 @@ Item {
     required property ShellScreen screen
     required property Item wallpaper
 
-    readonly property bool shouldBeActive: Config.background.visualiser.enabled && !(GameMode.enabled && GlobalConfig.utilities.gameMode.disableVisualizer) && (!Config.background.visualiser.autoHide || (Hypr.monitorFor(screen)?.activeWorkspace?.toplevels?.values.every(t => t.lastIpcObject?.floating) ?? true))
+    readonly property bool shouldBeActive: Config.background.visualiser.enabled && !(GameMode.enabled && GlobalConfig.utilities.gameMode.disableVisualizer) && (!Config.background.visualiser.autoHide || (Niri.windows.filter(t => t.output === screen.name).every(t => t.floating) ?? true))
     property real offset: shouldBeActive ? 0 : screen.height * 0.2
 
     readonly property int barExclusiveZone: Visibilities.bars.get(root.screen.name)?.exclusiveZone ?? (Tokens.sizes.bar.innerWidth + Math.max(Tokens.padding.small, Config.border.thickness))

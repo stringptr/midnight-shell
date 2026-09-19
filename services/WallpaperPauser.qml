@@ -63,12 +63,13 @@ Singleton {
             newPaused = true;
             reason = "Battery";
         } else if (pauseOnWindowOverlap) {
-            const monitor = Hypr.focusedMonitor;
-            const ws = Hypr.focusedWorkspace;
+            const monName = Niri.focusedMonitorName;
+            const wsIdx = Niri.focusedWorkspaceIndex;
+            const ws = Niri.allWorkspaces[wsIdx];
 
             if (ws) {
                 // Strictly filter global toplevels to ONLY the focused workspace
-                const toplevels = Hypr.toplevels.values.filter(t => t.workspace_id === ws.id);
+                const toplevels = Niri.windows.filter(t => t.workspace_id === ws.id);
 
                 // Rule #3 — 2+ visible windows
                 if (toplevels.length >= 2) {
@@ -76,17 +77,17 @@ Singleton {
                     reason = "2+ windows (" + toplevels.length + " total)";
                 } else {
                     // Rule #2 — 70% of monitor area
-                    if (monitor) {
-                        const screen = Quickshell.screens.find(s => s.name === monitor.name);
+                    if (monName) {
+                        const screen = Quickshell.screens.find(s => s.name === monName);
                         if (screen) {
                             const screenArea = screen.width * screen.height;
                             if (screenArea > 0) {
                                 const threshold = screenArea * 0.7;
                                 for (const t of toplevels) {
-                                    const size = t.lastIpcObject?.size;
+                                    const size = t.layout?.window_size;
                                     if (size && size.length >= 2 && size[0] * size[1] >= threshold) {
                                         newPaused = true;
-                                        reason = "70% area rule by: " + (t.lastIpcObject?.title ?? "Unknown") + " (" + size[0] + "x" + size[1] + ")";
+                                        reason = "70% area rule by: " + (t.title ?? "Unknown") + " (" + size[0] + "x" + size[1] + ")";
                                         break;
                                     }
                                 }
@@ -125,7 +126,7 @@ Singleton {
         onTriggered: root.recalculate()
     }
 
-    // Startup timer to ensure we catch the asynchronously loaded Hyprland and Quickshell state
+    // Startup timer to ensure we catch the asynchronously loaded Niri and Quickshell state
     Timer {
         id: startupTimer
         interval: 1000
