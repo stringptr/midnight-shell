@@ -14,13 +14,16 @@ StyledClippingRect {
     required property ShellScreen screen
     required property bool fullscreen
 
-    readonly property bool onSpecial: Hypr.monitorFor(screen)?.lastIpcObject.specialWorkspace?.name !== ""
-    readonly property int activeWsId: Hypr.monitorFor(screen).activeWorkspace?.id ?? 1
+    // TODO: Niri has no special workspaces — always false
+    readonly property bool onSpecial: false
+    readonly property int activeWsId: Niri.focusedWorkspaceId ?? 1
 
     readonly property var occupied: {
         const occ = {};
-        for (const ws of Hypr.workspaces.values)
-            occ[ws.id] = ws.lastIpcObject.windows > 0;
+        for (const ws of Niri.allWorkspaces) {
+            const wins = Niri.getWindowsByWorkspaceId(ws.id);
+            occ[ws.id] = wins ? wins.length > 0 : false;
+        }
         return occ;
     }
     readonly property int groupOffset: Math.floor((activeWsId - 1) / Config.bar.workspaces.shown) * Config.bar.workspaces.shown
@@ -105,10 +108,9 @@ StyledClippingRect {
                 const ws = (layout.childAt(event.x, event.y) as Workspace)?.ws;
                 if (!ws)
                     return;
-                if (Hypr.activeWsId !== ws)
-                    Hypr.dispatch(Hypr.usingLua ? `hl.dsp.focus({ workspace = "${ws}" })` : `workspace ${ws}`);
-                else
-                    Hypr.dispatch(Hypr.usingLua ? 'hl.dsp.workspace.toggle_special("special")' : "togglespecialworkspace special");
+                if (Niri.focusedWorkspaceId !== ws)
+                    Niri.switchToWorkspaceByNumber(ws);
+                // TODO: Niri has no special workspace toggle
             }
         }
 
@@ -123,33 +125,11 @@ StyledClippingRect {
         }
     }
 
-    Loader {
-        id: specialWs
-
-        asynchronous: true
-
-        anchors.fill: parent
-        anchors.margins: Tokens.padding.extraSmall
-
-        active: opacity > 0
-
-        scale: root.onSpecial ? 1 : 0.5
-        opacity: root.onSpecial ? 1 : 0
-
-        sourceComponent: SpecialWorkspaces {
-            screen: root.screen
-        }
-
-        Behavior on scale {
-            Anim {}
-        }
-
-        Behavior on opacity {
-            Anim {
-                type: Anim.DefaultEffects
-            }
-        }
-    }
+    // TODO: Niri has no special workspaces — loader commented out
+    // Loader {
+    //     id: specialWs
+    //     ...
+    // }
 
     Behavior on blur {
         Anim {

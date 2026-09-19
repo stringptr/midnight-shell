@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Caelestia.Internal
 import qs.services
 
 QtObject {
@@ -13,158 +14,119 @@ QtObject {
 
     signal loaded
 
-    property Process luaReader: Process {
+    readonly property string configPath: Quickshell.env("HOME") + "/.config/niri/config.kdl"
+    readonly property string scriptsDir: Quickshell.shellDir + "/modules/keybinds/scripts"
+
+    property FileView configFileView: FileView {
+        path: root.configPath
+        onContentChanged: root.reload()
+    }
+
+    property Process parserProcess: Process {
         running: false
-        command: ["lua", Quickshell.shellDir + "/assets/scripts/parse_keybinds.lua"]
+        command: ["sh", "-c", `python3 '${root.scriptsDir}/expand.py' < '${root.configPath}' 2>/dev/null | python3 '${root.scriptsDir}/extract_binds.py' 2>/dev/null | python3 '${root.scriptsDir}/pretty_print_binds.py' 2>/dev/null`]
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
                     const parsed = JSON.parse(text);
                     if (Array.isArray(parsed)) {
-                        keybinds = parsed;
-                        initialized = true;
+                        root.keybinds = parsed;
+                        root.initialized = true;
                         root.loaded();
-                        return;
                     }
                 } catch (e) {
-                    console.error("Failed to parse lua keybinds: " + e);
+                    console.error("Failed to parse niri keybinds: " + e);
                 }
-                // If Lua parsing failed or returned invalid data, try fallback
-                if (!initialized && !fallbackReader.running) {
-                    fallbackReader.running = true;
-                }
+            }
+        }
+        onRunningChanged: {
+            if (!running && !root.initialized) {
+                root.keybinds = [];
+                root.initialized = true;
+                root.loaded();
             }
         }
     }
 
-    property Process fallbackReader: Process {
-        running: false
-        command: ["hyprctl", "binds", "-j"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    const binds = JSON.parse(text);
-                    const formattedBinds = [];
-
-                    for (const b of binds) {
-                        const action = b.dispatcher + (b.arg ? " " + b.arg : "");
-                        const description = (b.has_description !== undefined && b.has_description && b.description) ? b.description : action;
-                        
-                        let mods = [];
-                        const m = b.modmask;
-                        if (m & 64) mods.push("Super");
-                        if (m & 8) mods.push("Alt");
-                        if (m & 4) mods.push("Ctrl");
-                        if (m & 1) mods.push("Shift");
-                        
-                        let keyText = b.key;
-                        if (keyText === "") {
-                            if (b.catch_all) {
-                                keyText = "Catchall";
-                            } else {
-                                continue;
-                            }
-                        }
-
-                        let bindText = mods.join(" + ");
-                        if (bindText !== "") bindText += " + ";
-                        bindText += keyText;
-
-                        formattedBinds.push({
-                            bind: bindText,
-                            action: action,
-                            description: description
-                        });
-                    }
-                    
-                    keybinds = formattedBinds;
-                    initialized = true;
-                    root.loaded();
-                } catch (e) {
-                    console.error("Failed to parse hyprctl binds -j: " + e);
-                }
-            }
-        }
-    }
-
-    function loadKeybinds() {
-        if (initialized && keybinds.length > 0) {
+    function loadKeybinds(): void {
+        if (initialized && keybinds.length > 0)
             return;
-        }
         keybinds = [];
         initialized = false;
-        if (Hypr.usingLua) {
-            luaReader.running = true;
-        } else {
-            fallbackReader.running = true;
-        }
+        parserProcess.running = true;
     }
 
-    function reload() {
+    function reload(): void {
         keybinds = [];
         initialized = false;
-        if (Hypr.usingLua) {
-            luaReader.running = true;
-        } else {
-            fallbackReader.running = true;
-        }
+        if (!parserProcess.running)
+            parserProcess.running = true;
     }
 
-    function query(searchText) {
+    function query(searchText): var {
         if (!searchText)
             return keybinds;
 
         const queryText = searchText.toLowerCase().trim();
-        return keybinds.filter(k => 
-            (k.bind && k.bind.toLowerCase().includes(queryText)) ||
-            (k.description && k.description.toLowerCase().includes(queryText)) ||
+        return keybinds.filter(k =>
+            (k.key && k.key.toLowerCase().includes(queryText)) ||
             (k.action && k.action.toLowerCase().includes(queryText))
         );
     }
 
-    function execute(item) {
+    function execute(item): void {
         if (!item)
             return;
 
-        // 1. Direct shell command execution (apps, scripts, cli commands)
-        if (item.cmd) {
-            Quickshell.execDetached(["sh", "-c", item.cmd]);
-            return;
-        }
-
-        // 2. Direct Lua evaluation in Hyprland
-        if (Hypr.usingLua && item.lua) {
-            Quickshell.execDetached(["hyprctl", "eval", item.lua]);
-            return;
-        }
-
-        // 3. Fallback handlers for raw action string
-        const action = (item.action || "").trim();
+        const action = (item.action || "").toLowerCase().trim();
         if (!action)
             return;
 
-        if (action.startsWith("exec ")) {
-            Quickshell.execDetached(["sh", "-c", action.slice(5)]);
-        } else if (action.startsWith("global ")) {
-            const name = action.slice(7).trim();
-            if (Hypr.usingLua) {
-                Quickshell.execDetached(["hyprctl", "dispatch", `hl.dsp.global("${name}")`]);
-            } else {
-                Quickshell.execDetached(["hyprctl", "dispatch", action]);
+        // Map human-readable actions to Niri IPC calls
+        if (action.includes("close window") || action.includes("close-window")) {
+            Niri.closeFocusedWindow();
+        } else if (action.includes("toggle floating") || action.includes("toggle-window-floating")) {
+            Niri.toggleWindowFloating();
+        } else if (action.includes("toggle fullscreen") || action.includes("fullscreen")) {
+            Niri.toggleFullscreen();
+        } else if (action.includes("toggle maximize") || action.includes("maximize")) {
+            Niri.toggleMaximize();
+        } else if (action.includes("toggle overview") || action.includes("overview")) {
+            Niri.toggleOverview();
+        } else if (action.includes("center window")) {
+            Niri.centerWindow();
+        } else if (action.includes("focus column left")) {
+            NiriIpc.action("focus-column-left");
+        } else if (action.includes("focus column right")) {
+            NiriIpc.action("focus-column-right");
+        } else if (action.includes("focus window up")) {
+            NiriIpc.action("focus-window-up");
+        } else if (action.includes("focus window down")) {
+            NiriIpc.action("focus-window-down");
+        } else if (action.includes("focus workspace up")) {
+            Niri.switchToWorkspaceUpDown("up");
+        } else if (action.includes("focus workspace down")) {
+            Niri.switchToWorkspaceUpDown("down");
+        } else if (action.includes("move column left")) {
+            NiriIpc.action("move-column-left");
+        } else if (action.includes("move column right")) {
+            NiriIpc.action("move-column-right");
+        } else if (action.includes("move window up")) {
+            NiriIpc.action("move-window-up");
+        } else if (action.includes("move window down")) {
+            NiriIpc.action("move-window-down");
+        } else if (action.includes("spawn")) {
+            // Extract the command after "spawn " if present
+            const spawnMatch = action.match(/spawn\s+(.+)/);
+            if (spawnMatch) {
+                Quickshell.execDetached(["sh", "-c", spawnMatch[1]]);
             }
-        } else if (action.startsWith("eval ")) {
-            Quickshell.execDetached(["hyprctl", "eval", action.slice(5)]);
         } else {
-            if (Hypr.usingLua) {
-                Quickshell.execDetached(["hyprctl", "dispatch", `hl.dsp.${action}()`]);
-            } else {
-                Quickshell.execDetached(["hyprctl", "dispatch", action]);
-            }
+            console.log("Keybinds: unhandled action:", item.action);
         }
     }
 
     Component.onCompleted: {
         loadKeybinds();
-        Hypr.configReloaded.connect(root.reload);
     }
 }

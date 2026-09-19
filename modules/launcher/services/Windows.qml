@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Caelestia.Config
+import qs.services
 
 QtObject {
     id: root
@@ -14,21 +15,36 @@ QtObject {
 
     function updateItems(): void {
         const windows = [];
-        for (const client of Hypr.toplevels.values) {
-            const ipc = client.lastIpcObject;
+        for (const win of Niri.windows) {
             windows.push({
-                id: client.id,
-                title: client.title || "",
-                class: ipc?.class || ipc?.app_id || "",
-                workspace: client.workspace?.name || "",
-                workspace_id: client.workspace_id ?? 0,
-                monitor: client.monitor?.name || "",
-                wayland: client.wayland,
-                size: ipc?.size || [0, 0],
-                at: ipc?.at || [0, 0],
-                mapped: ipc?.mapped ?? true,
-                hidden: ipc?.hidden ?? false,
-                lastIpcObject: ipc
+                id: win.id,
+                title: win.title || "",
+                class: win.app_id || "",
+                workspace_id: win.workspace_id ?? 0,
+                monitor: win.output || "",
+                is_focused: win.is_focused ?? false,
+                is_fullscreen: win.is_fullscreen ?? false,
+                is_maximized: win.is_maximized ?? false,
+                is_floating: win.is_floating ?? false,
+                // Stub fields for compatibility with callers expecting Hyprland shape
+                wayland: null,
+                size: [0, 0],
+                at: [0, 0],
+                mapped: true,
+                hidden: false,
+                lastIpcObject: {
+                    app_id: win.app_id,
+                    class: win.app_id,
+                    at: [0, 0],
+                    size: [0, 0],
+                    mapped: true,
+                    hidden: false,
+                    floating: win.is_floating ?? false,
+                    pinned: false,
+                    xwayland: false,
+                    pid: 0,
+                    fullscreen: win.is_fullscreen ? 1 : 0
+                }
             });
         }
         items = windows;
@@ -37,8 +53,7 @@ QtObject {
     function query(search: string): var {
         let results = items;
         if (GlobalConfig.launcher.windowSwitcherActiveWorkspaceOnly) {
-            // TODO: Niri workspace filtering
-            const activeWs = Hypr.activeWsId;
+            const activeWs = Niri.focusedWorkspaceId;
             if (activeWs) {
                 results = results.filter(w => w.workspace_id === activeWs);
             }
@@ -51,12 +66,12 @@ QtObject {
     }
 
     function focusWindow(id: int): void {
-        // TODO: Niri focus by window ID
-        console.log("Windows.focusWindow: not yet supported in Niri, id:", id);
+        Niri.focusWindow(id);
     }
 
     Component.onCompleted: {
         updateItems();
-        // TODO: connect to Niri window change signals
+        Niri.windowOpenedOrChanged.connect(() => updateItems());
+        Niri.windowClosed.connect(() => updateItems());
     }
 }
