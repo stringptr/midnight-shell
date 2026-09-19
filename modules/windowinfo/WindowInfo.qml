@@ -13,13 +13,16 @@ Item {
 
     property var client: {
         if (clientAddress !== "") {
-            for (const t of Hypr.toplevels.values) {
-                if (t.address === clientAddress) {
-                    return t;
+            const id = parseInt(clientAddress);
+            if (!isNaN(id)) {
+                for (const t of Niri.windows) {
+                    if (t.id === id) {
+                        return t;
+                    }
                 }
             }
         }
-        return Hypr.activeToplevel;
+        return Niri.focusedWindow;
     }
 
     implicitWidth: child.implicitWidth

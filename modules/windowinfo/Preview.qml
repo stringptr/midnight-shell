@@ -71,16 +71,13 @@ Item {
             captureSource: {
                 const client = root.client;
                 if (!client || !client.wayland) return null; // qmllint disable unresolved-type
-                const ipc = client.lastIpcObject;
-                if (ipc) {
-                    if (ipc.mapped === false || ipc.hidden) return null;
-                    if (ipc.size && (ipc.size[0] <= 0 || ipc.size[1] <= 0)) return null;
-                }
+                const size = client.layout?.window_size;
+                if (size && (size[0] <= 0 || size[1] <= 0)) return null;
                 return client.wayland;
             }
             live: visible
 
-            constraintSize.width: (root.client && root.client.lastIpcObject?.size && root.client.lastIpcObject.size[1] > 0) ? parent.height * Math.min(root.screen.width / root.screen.height, root.client.lastIpcObject.size[0] / root.client.lastIpcObject.size[1]) : parent.height
+            constraintSize.width: (root.client && root.client.layout?.window_size && root.client.layout.window_size[1] > 0) ? parent.height * Math.min(root.screen.width / root.screen.height, root.client.layout.window_size[0] / root.client.layout.window_size[1]) : parent.height
             constraintSize.height: parent.height
         }
     }
@@ -98,9 +95,10 @@ Item {
             if (!client)
                 return Tr.tr("No active client");
 
-            const mon = client.monitor;
-            // TRANSLATORS: %1 = window title, %2 = monitor name, %3/%4 = x/y position in pixels
-            return Tr.tr("%1 on monitor %2 at %3, %4").arg(client.title).arg(mon?.name ?? "unknown").arg(client.lastIpcObject?.at?.[0] ?? -1).arg(client.lastIpcObject?.at?.[1] ?? -1);
+            const output = Niri.outputs[client.output];
+            const pos = client.layout?.pos_in_scrolling_layout;
+            // TRANSLATORS: %1 = window title, %2 = monitor name, %3/%4 = column/row position
+            return Tr.tr("%1 on monitor %2 at %3, %4").arg(client.title).arg(output?.name ?? "unknown").arg(pos?.[0] ?? -1).arg(pos?.[1] ?? -1);
         }
     }
 }

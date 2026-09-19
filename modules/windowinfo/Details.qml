@@ -23,7 +23,7 @@ ColumnLayout {
     }
 
     Label {
-        text: root.client?.lastIpcObject?.app_id ?? root.client?.lastIpcObject?.class ?? Tr.tr("No active client")
+        text: root.client?.app_id ?? root.client?.class ?? Tr.tr("No active client")
         color: Colours.palette.m3tertiary
 
         font: Tokens.font.body.large
@@ -53,14 +53,14 @@ ColumnLayout {
 
     Detail {
         icon: "location_searching"
-        // TRANSLATORS: %1/%2 = x and y position in pixels
-        text: Tr.tr("Position: %1, %2").arg(root.client?.lastIpcObject.at[0] ?? -1).arg(root.client?.lastIpcObject.at[1] ?? -1)
+        // TRANSLATORS: %1/%2 = column and row position in scrolling layout
+        text: Tr.tr("Position: %1, %2").arg(root.client?.layout?.pos_in_scrolling_layout?.[0] ?? -1).arg(root.client?.layout?.pos_in_scrolling_layout?.[1] ?? -1)
     }
 
     Detail {
         icon: "resize"
         // TRANSLATORS: %1/%2 = width and height in pixels; the x is a multiplication sign
-        text: Tr.tr("Size: %1 x %2").arg(root.client?.lastIpcObject.size[0] ?? -1).arg(root.client?.lastIpcObject.size[1] ?? -1)
+        text: Tr.tr("Size: %1 x %2").arg(root.client?.layout?.window_size?.[0] ?? -1).arg(root.client?.layout?.window_size?.[1] ?? -1)
         color: Colours.palette.m3tertiary
     }
 
@@ -74,10 +74,14 @@ ColumnLayout {
     Detail {
         icon: "desktop_windows"
         text: {
-            const mon = root.client?.monitor;
-            if (mon)
-                // TRANSLATORS: %1 = monitor name, %2 = monitor id, %3/%4 = x/y position in pixels
-                return Tr.tr("Monitor: %1 (%2) at %3, %4").arg(mon.name).arg(mon.id).arg(mon.x).arg(mon.y);
+            const outputName = root.client?.output;
+            if (outputName) {
+                const mon = Niri.outputs[outputName];
+                if (mon)
+                    // TRANSLATORS: %1 = monitor name, %2/%3 = x/y position in pixels
+                    return Tr.tr("Monitor: %1 at %2, %3").arg(mon.name ?? outputName).arg(mon.x ?? 0).arg(mon.y ?? 0);
+                return Tr.tr("Monitor: %1").arg(outputName);
+            }
             return Tr.tr("Monitor: unknown");
         }
     }
@@ -104,8 +108,7 @@ ColumnLayout {
 
     Detail {
         icon: "picture_in_picture_center"
-        // TODO: Niri has no floating property
-        text: Tr.tr("Floating: N/A")
+        text: root.client?.is_floating ? Tr.tr("Floating: on") : Tr.tr("Floating: off")
         color: Colours.palette.m3secondary
     }
 

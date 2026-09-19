@@ -88,20 +88,28 @@ ColumnLayout {
         }
 
         Repeater {
-            model: 10
+            model: {
+                const workspaces = Niri.allWorkspaces;
+                if (!workspaces || workspaces.length === 0) return [];
+                const focused = Niri.focusedWorkspaceIndex ?? 0;
+                const start = Math.max(0, focused - 4);
+                const end = Math.min(workspaces.length, start + 10);
+                return workspaces.slice(start, end);
+            }
 
             Button {
-                required property int index
-                readonly property int wsId: Math.floor((Hypr.activeWsId - 1) / 10) * 10 + index + 1
-                readonly property bool isCurrent: root.client?.workspace.id === wsId
+                required property var modelData
+                readonly property int wsIdx: modelData.idx ?? 0
+                readonly property bool isCurrent: root.client?.workspace_id === modelData.id
 
                 onClicked: {
-                    Hypr.dispatch(Hypr.usingLua ? `hl.dsp.window.move({ window = "address:0x${root.client?.address}", workspace = "${wsId}", follow = true })` : `movetoworkspace ${wsId},address:0x${root.client?.address}`);
+                    Niri.moveWindowToWorkspace(wsIdx);
+                    Niri.switchToWorkspace(wsIdx);
                 }
 
                 color: isCurrent ? Colours.tPalette.m3surfaceContainerHighest : Colours.palette.m3tertiaryContainer
                 onColor: isCurrent ? Colours.palette.m3onSurface : Colours.palette.m3onTertiaryContainer
-                text: wsId
+                text: modelData.name ?? (wsIdx + 1)
                 disabled: isCurrent
             }
         }
@@ -119,9 +127,8 @@ ColumnLayout {
         Button {
             color: Colours.palette.m3secondaryContainer
             onColor: Colours.palette.m3onSecondaryContainer
-            // TODO: Niri floating toggle
-            text: Tr.tr("Float")
-            onClicked: console.log("Buttons: floating toggle not yet supported in Niri")
+            text: root.client?.is_floating ? Tr.tr("Tile") : Tr.tr("Float")
+            onClicked: Niri.toggleWindowFloating(root.client?.id ?? 0)
         }
 
         Loader {

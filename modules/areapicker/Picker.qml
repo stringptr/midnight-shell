@@ -18,8 +18,12 @@ MouseArea {
 
     property bool onClient
 
-    property real realBorderWidth: onClient ? (Hypr.options["general:border_size"] ?? 1) : 2
-    property real realRounding: onClient ? (Hypr.options["decoration:rounding"] ?? 0) : 0
+    // Niri doesn't expose border/rounding config via IPC, use sensible defaults
+    property int borderWidth: 2
+    property int rounding: 8
+
+    property real realBorderWidth: onClient ? borderWidth : 2
+    property real realRounding: onClient ? rounding : 0
 
     property real ssx
     property real ssy
@@ -34,41 +38,61 @@ MouseArea {
     property real sw: Math.abs(sx - ex)
     property real sh: Math.abs(sy - ey)
 
-    property list<var> clients: {
-        const mon = Hypr.monitorFor(screen);
-        if (!mon)
-            return [];
-
-        const special = mon.lastIpcObject?.specialWorkspace;
-        const wsId = special?.name ? special.id : mon.activeWorkspace?.id;
-        if (wsId === undefined)
-            return [];
-
-        return Hypr.toplevelsForWs(wsId).sort((a, b) => {
-            // Pinned first, then fullscreen, then floating, then any other
-            const ac = a?.lastIpcObject;
-            const bc = b?.lastIpcObject;
-            if (!ac || !bc)
-                return !ac - !bc; // Missing IPC last
-            return (bc.pinned - ac.pinned) || ((bc.fullscreen !== 0) - (ac.fullscreen !== 0)) || (bc.floating - ac.floating);
+    // Get windows in current workspace using Niri service
+    property var clients: {
+        if (!Niri.niriAvailable) return [];
+        return Niri.getActiveWorkspaceWindows().slice().sort((a, b) => {
+            const aPos = a.layout?.pos_in_scrolling_layout || [0, 0];
+            const bPos = b.layout?.pos_in_scrolling_layout || [0, 0];
+            if (aPos[0] !== bPos[0]) return aPos[0] - bPos[0];
+            return aPos[1] - bPos[1];
         });
+    }
+
+    // Estimate window screen position from Niri layout data
+    function getWindowGeometry(window) {
+        if (!window?.layout?.window_size) return null;
+
+        const size = window.layout.window_size;
+        const pos = window.layout.pos_in_scrolling_layout ?? [0, 0];
+
+        const focusedWindow = Niri.focusedWindow;
+        if (!focusedWindow?.layout?.pos_in_scrolling_layout) {
+            return {
+                x: (screen.width - size[0]) / 2,
+                y: (screen.height - size[1]) / 2,
+                w: size[0],
+                h: size[1]
+            };
+        }
+
+        const focusedPos = focusedWindow.layout.pos_in_scrolling_layout;
+        const focusedSize = focusedWindow.layout.window_size ?? [screen.width, screen.height];
+
+        const colOffset = pos[0] - focusedPos[0];
+        const rowOffset = pos[1] - focusedPos[1];
+
+        const focusedX = focusedSize[0] < screen.width ? (screen.width - focusedSize[0]) / 2 : 0;
+        const focusedY = focusedSize[1] < screen.height ? (screen.height - focusedSize[1]) / 2 : 0;
+
+        return {
+            x: focusedX + (colOffset * size[0]),
+            y: focusedY + (rowOffset * size[1]),
+            w: size[0],
+            h: size[1]
+        };
     }
 
     function checkClientRects(x: real, y: real): void {
         for (const client of clients) {
-            if (!client)
-                continue;
+            const geom = getWindowGeometry(client);
+            if (!geom) continue;
 
-            const ipc = client.lastIpcObject;
-            if (!ipc?.at || !ipc?.size)
-                continue;
+            const cx = geom.x;
+            const cy = geom.y;
+            const cw = geom.w;
+            const ch = geom.h;
 
-            let {
-                at: [cx, cy],
-                size: [cw, ch]
-            } = ipc;
-            cx -= screen.x;
-            cy -= screen.y;
             if (cx <= x && cy <= y && cx + cw >= x && cy + ch >= y) {
                 onClient = true;
                 sx = cx;
@@ -106,23 +130,27 @@ MouseArea {
     cursorShape: Qt.CrossCursor
 
     Component.onCompleted: {
-        Hypr.extras.refreshOptions();
-
         // Break binding if frozen
         if (loader.freeze)
             clients = clients;
 
         opacity = 1;
 
-        const ipc = clients[0]?.lastIpcObject;
-        if (ipc?.at && ipc?.size) {
-            const cx = ipc.at[0] - screen.x;
-            const cy = ipc.at[1] - screen.y;
-            onClient = true;
-            sx = cx;
-            sy = cy;
-            ex = cx + ipc.size[0];
-            ey = cy + ipc.size[1];
+        const c = clients[0];
+        if (c) {
+            const geom = getWindowGeometry(c);
+            if (geom) {
+                onClient = true;
+                sx = geom.x;
+                sy = geom.y;
+                ex = geom.x + geom.w;
+                ey = geom.y + geom.h;
+            } else {
+                sx = screen.width / 2 - 100;
+                sy = screen.height / 2 - 100;
+                ex = screen.width / 2 + 100;
+                ey = screen.height / 2 + 100;
+            }
         } else {
             sx = screen.width / 2 - 100;
             sy = screen.height / 2 - 100;
@@ -205,14 +233,12 @@ MouseArea {
         }
     }
 
-    Process {
-        running: true
-        command: ["hyprctl", "cursorpos", "-j"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const pos = JSON.parse(text);
-                root.checkClientRects(pos.x - root.screen.x, pos.y - root.screen.y);
-            }
+    // Re-check client rects when focused workspace changes
+    Connections {
+        target: Niri
+
+        function onFocusedWorkspaceIdChanged(): void {
+            root.checkClientRects(root.mouseX, root.mouseY);
         }
     }
 
