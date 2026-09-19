@@ -136,7 +136,7 @@ bool NiriIpc::action(const QString& actionName, const QVariantList& args) {
     QString pascalName;
     bool capitalizeNext = true;
     for (const QChar& c : actionName) {
-        if (c == '-') {
+        if (c == u'-') {
             capitalizeNext = true;
         } else {
             pascalName += capitalizeNext ? c.toUpper() : c;
