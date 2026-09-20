@@ -14,198 +14,198 @@ Scope {
     readonly property bool hasFullscreen: Niri.windows.some(t => t.fullscreen) ?? false
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "nexus"
-        description: "Open nexus"
-        onPressed: WindowFactory.create()
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "nexus"
+    //     description: "Open nexus"
+    //     onPressed: WindowFactory.create()
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "showall"
-        description: "Toggle launcher, dashboard and osd"
-        onPressed: {
-            if (root.hasFullscreen)
-                return;
-            const v = ShellState.forActive();
-            v.launcher = v.dashboard = v.osd = v.utilities = !(v.launcher || v.dashboard || v.osd || v.utilities);
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "showall"
+    //     description: "Toggle launcher, dashboard and osd"
+    //     onPressed: {
+    //         if (root.hasFullscreen)
+    //             return;
+    //         const v = ShellState.forActive();
+    //         v.launcher = v.dashboard = v.osd = v.utilities = !(v.launcher || v.dashboard || v.osd || v.utilities);
+    //     }
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "dashboard"
-        description: "Toggle dashboard"
-        onPressed: {
-            if (root.hasFullscreen)
-                return;
-            const screenState = ShellState.forActive();
-            screenState.dashboard = !screenState.dashboard;
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "dashboard"
+    //     description: "Toggle dashboard"
+    //     onPressed: {
+    //         if (root.hasFullscreen)
+    //             return;
+    //         const screenState = ShellState.forActive();
+    //         screenState.dashboard = !screenState.dashboard;
+    //     }
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "session"
-        description: "Toggle session menu"
-        onPressed: {
-            if (root.hasFullscreen)
-                return;
-            const screenState = ShellState.forActive();
-            screenState.session = !screenState.session;
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "session"
+    //     description: "Toggle session menu"
+    //     onPressed: {
+    //         if (root.hasFullscreen)
+    //             return;
+    //         const screenState = ShellState.forActive();
+    //         screenState.session = !screenState.session;
+    //     }
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "launcher"
-        description: "Toggle launcher"
-        onPressed: root.launcherInterrupted = false
-        onReleased: {
-            if (!root.launcherInterrupted && !root.hasFullscreen) {
-                const screenState = ShellState.forActive();
-                screenState.launcher = !screenState.launcher;
-            }
-            root.launcherInterrupted = false;
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "launcher"
+    //     description: "Toggle launcher"
+    //     onPressed: root.launcherInterrupted = false
+    //     onReleased: {
+    //         if (!root.launcherInterrupted && !root.hasFullscreen) {
+    //             const screenState = ShellState.forActive();
+    //             screenState.launcher = !screenState.launcher;
+    //         }
+    //         root.launcherInterrupted = false;
+    //     }
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "launcherInterrupt"
-        description: "Interrupt launcher keybind"
-        onPressed: root.launcherInterrupted = true
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "launcherInterrupt"
+    //     description: "Interrupt launcher keybind"
+    //     onPressed: root.launcherInterrupted = true
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "sidebar"
-        description: "Toggle sidebar"
-        onPressed: {
-            if (root.hasFullscreen)
-                return;
-            const screenState = ShellState.forActive();
-            Visibilities.initialSidebarTab = "notifications";
-            screenState.sidebar = !screenState.sidebar;
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "sidebar"
+    //     description: "Toggle sidebar"
+    //     onPressed: {
+    //         if (root.hasFullscreen)
+    //             return;
+    //         const screenState = ShellState.forActive();
+    //         Visibilities.initialSidebarTab = "notifications";
+    //         screenState.sidebar = !screenState.sidebar;
+    //     }
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "aiAssistant"
-        description: "Toggle AI Assistant"
-        onPressed: {
-            if (root.hasFullscreen)
-                return;
-            const visibilities = Visibilities.getForActive();
-            Visibilities.initialSidebarTab = "ai";
-            visibilities.sidebar = true;
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "aiAssistant"
+    //     description: "Toggle AI Assistant"
+    //     onPressed: {
+    //         if (root.hasFullscreen)
+    //             return;
+    //         const visibilities = Visibilities.getForActive();
+    //         Visibilities.initialSidebarTab = "ai";
+    //         visibilities.sidebar = true;
+    //     }
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "utilities"
-        description: "Toggle utilities"
-        onPressed: {
-            if (root.hasFullscreen)
-                return;
-            const screenState = ShellState.forActive();
-            screenState.utilities = !screenState.utilities;
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "utilities"
+    //     description: "Toggle utilities"
+    //     onPressed: {
+    //         if (root.hasFullscreen)
+    //             return;
+    //         const screenState = ShellState.forActive();
+    //         screenState.utilities = !screenState.utilities;
+    //     }
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "emoji"
-        description: "Open emoji picker"
-        onPressed: {
-            if (root.hasFullscreen)
-                return;
-            Visibilities.launcherInitialSearch = `${GlobalConfig.launcher.actionPrefix}emoji `;
-            const visibilities = Visibilities.getForActive();
-            visibilities.launcher = true;
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "emoji"
+    //     description: "Open emoji picker"
+    //     onPressed: {
+    //         if (root.hasFullscreen)
+    //             return;
+    //         Visibilities.launcherInitialSearch = `${GlobalConfig.launcher.actionPrefix}emoji `;
+    //         const visibilities = Visibilities.getForActive();
+    //         visibilities.launcher = true;
+    //     }
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "clipboard"
-        description: "Open clipboard history"
-        onPressed: {
-            if (root.hasFullscreen)
-                return;
-            Visibilities.launcherInitialSearch = `${GlobalConfig.launcher.actionPrefix}clipboard `;
-            const visibilities = Visibilities.getForActive();
-            visibilities.launcher = true;
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "clipboard"
+    //     description: "Open clipboard history"
+    //     onPressed: {
+    //         if (root.hasFullscreen)
+    //             return;
+    //         Visibilities.launcherInitialSearch = `${GlobalConfig.launcher.actionPrefix}clipboard `;
+    //         const visibilities = Visibilities.getForActive();
+    //         visibilities.launcher = true;
+    //     }
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "windowSwitcher"
-        description: "Open window switcher"
-        onPressed: {
-            if (root.hasFullscreen)
-                return;
-            Visibilities.launcherInitialSearch = `${GlobalConfig.launcher.actionPrefix}windows `;
-            const visibilities = Visibilities.getForActive();
-            visibilities.launcher = true;
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "windowSwitcher"
+    //     description: "Open window switcher"
+    //     onPressed: {
+    //         if (root.hasFullscreen)
+    //             return;
+    //         Visibilities.launcherInitialSearch = `${GlobalConfig.launcher.actionPrefix}windows `;
+    //         const visibilities = Visibilities.getForActive();
+    //         visibilities.launcher = true;
+    //     }
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "wallpaper"
-        description: "Open wallpaper picker"
-        onPressed: {
-            if (root.hasFullscreen)
-                return;
-            Visibilities.launcherInitialSearch = `${GlobalConfig.launcher.actionPrefix}wallpaper `;
-            const visibilities = Visibilities.getForActive();
-            visibilities.launcher = true;
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "wallpaper"
+    //     description: "Open wallpaper picker"
+    //     onPressed: {
+    //         if (root.hasFullscreen)
+    //             return;
+    //         Visibilities.launcherInitialSearch = `${GlobalConfig.launcher.actionPrefix}wallpaper `;
+    //         const visibilities = Visibilities.getForActive();
+    //         visibilities.launcher = true;
+    //     }
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "keybinds"
-        description: "Open keybinds list"
-        onPressed: {
-            if (root.hasFullscreen)
-                return;
-            Visibilities.launcherInitialSearch = `${GlobalConfig.launcher.actionPrefix}keybinds `;
-            const visibilities = Visibilities.getForActive();
-            visibilities.launcher = true;
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "keybinds"
+    //     description: "Open keybinds list"
+    //     onPressed: {
+    //         if (root.hasFullscreen)
+    //             return;
+    //         Visibilities.launcherInitialSearch = `${GlobalConfig.launcher.actionPrefix}keybinds `;
+    //         const visibilities = Visibilities.getForActive();
+    //         visibilities.launcher = true;
+    //     }
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "workspaceOverview"
-        description: "Toggle workspace overview"
-        onPressed: {
-            if (root.hasFullscreen)
-                return;
-            const screenState = ShellState.forActive();
-            screenState.workspaceDrawer = !screenState.workspaceDrawer;
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "workspaceOverview"
+    //     description: "Toggle workspace overview"
+    //     onPressed: {
+    //         if (root.hasFullscreen)
+    //             return;
+    //         const screenState = ShellState.forActive();
+    //         screenState.workspaceDrawer = !screenState.workspaceDrawer;
+    //     }
+    // }
 
     IpcHandler {
         function toggle(drawer: string): void {

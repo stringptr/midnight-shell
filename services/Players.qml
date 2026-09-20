@@ -103,48 +103,48 @@ Singleton {
     }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "mediaToggle"
-        description: "Toggle media playback"
-        onPressed: {
-            const active = root.active;
-            if (active && active.canTogglePlaying)
-                active.togglePlaying();
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "mediaToggle"
+    //     description: "Toggle media playback"
+    //     onPressed: {
+    //         const active = root.active;
+    //         if (active && active.canTogglePlaying)
+    //             active.togglePlaying();
+    //     }
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "mediaPrev"
-        description: "Previous track"
-        onPressed: {
-            const active = root.active;
-            if (active && active.canGoPrevious)
-                active.previous();
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "mediaPrev"
+    //     description: "Previous track"
+    //     onPressed: {
+    //         const active = root.active;
+    //         if (active && active.canGoPrevious)
+    //             active.previous();
+    //     }
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "mediaNext"
-        description: "Next track"
-        onPressed: {
-            const active = root.active;
-            if (active && active.canGoNext)
-                active.next();
-        }
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "mediaNext"
+    //     description: "Next track"
+    //     onPressed: {
+    //         const active = root.active;
+    //         if (active && active.canGoNext)
+    //             active.next();
+    //     }
+    // }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "mediaStop"
-        description: "Stop media playback"
-        onPressed: root.active?.stop()
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "mediaStop"
+    //     description: "Stop media playback"
+    //     onPressed: root.active?.stop()
+    // }
 
     IpcHandler {
         function getActive(prop: string): string {

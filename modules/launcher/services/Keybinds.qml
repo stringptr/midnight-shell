@@ -19,7 +19,7 @@ QtObject {
 
     property FileView configFileView: FileView {
         path: root.configPath
-        onContentChanged: root.reload()
+        // onContentChanged: root.reload()
     }
 
     property Process parserProcess: Process {

@@ -154,12 +154,12 @@ Singleton {
     }
 
     // qmllint disable unresolved-type
-    CustomShortcut {
-        // qmllint enable unresolved-type
-        name: "clearNotifs"
-        description: "Clear all notifications"
-        onPressed: root.clear()
-    }
+    // CustomShortcut {
+    //     // qmllint enable unresolved-type
+    //     name: "clearNotifs"
+    //     description: "Clear all notifications"
+    //     onPressed: root.clear()
+    // }
 
     IpcHandler {
         function clear(): void {
