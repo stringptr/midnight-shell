@@ -4,19 +4,16 @@
 
 <div align=center>
 
-![GitHub last commit](https://img.shields.io/github/last-commit/dim-ghub/midnight-shell?style=for-the-badge&labelColor=101418&color=9ccbfb)
-![GitHub Repo stars](https://img.shields.io/github/stars/dim-ghub/midnight-shell?style=for-the-badge&labelColor=101418&color=b9c8da)
-![GitHub repo size](https://img.shields.io/github/repo-size/dim-ghub/midnight-shell?style=for-the-badge&labelColor=101418&color=d3bfe6)
-[![Discord invite](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscordapp.com%2Fapi%2Finvites%2FBGDCFCmMBk%3Fwith_counts%3Dtrue&query=approximate_member_count&style=for-the-badge&logo=discord&logoColor=ffffff&label=discord&labelColor=101418&color=96f1f1&link=https%3A%2F%2Fdiscord.gg%2FBGDCFCmMBk)](https://discord.gg/BGDCFCmMBk)
+![GitHub last commit](https://img.shields.io/github/last-commit/stringptr/midnight-shell?style=for-the-badge&labelColor=101418&color=9ccbfb)
+![GitHub Repo stars](https://img.shields.io/github/stars/dim-ghub/stringptr?style=for-the-badge&labelColor=101418&color=b9c8da)
+![GitHub repo size](https://img.shields.io/github/repo-size/stringptr/midnight-shell?style=for-the-badge&labelColor=101418&color=d3bfe6)
 
 </div>
 
 > [!NOTE]
-> This is a fork of the official [caelestia-shell](https://github.com/caelestia-dots/shell) with additional features. All new features are listed below.
+> This is a fork of MiDnight Shell, which itself is a fork of the official [caelestia-shell](https://github.com/caelestia-dots/shell) with additional features. New features compared to upstream are listed below.
 
-
-https://github.com/user-attachments/assets/774a8872-4d95-45b9-a4b6-409d8394dadc
-
+<https://github.com/user-attachments/assets/774a8872-4d95-45b9-a4b6-409d8394dadc>
 
 ## Fork Features
 
@@ -34,60 +31,11 @@ This fork adds the following features on top of the official shell:
 - **QuickShare**: Supports the android feature, allowing file transfers between your devices (w/ avahi daemon)
 - **Polkit**: Supplies its own built-in polkit daemon, with animations.
   
-
 ## Installation
 
 > [!NOTE]
-> This repository is a **FORK**, and can be out of date or have missing features from the [main repo](https://github.com/caelestia-dots/caelestia).
-> This fork is available at [dim-ghub/midnight-shell](https://github.com/dim-ghub/midnight-shell).
-
-### Arch Linux (this fork)
-
-<details><summary id="dependencies">Dependencies</summary>
-
--   [`midnight-cli` (this fork is recommended and required for some features to work)](https://github.com/dim-ghub/midnight-cli)
--   [`quickshell-git`](https://quickshell.outfoxxed.me) - this has to be the git version, not the latest tagged version
--   [`ddcutil`](https://github.com/rockowitz/ddcutil)
--   [`brightnessctl`](https://github.com/Hummer12007/brightnessctl)
--   [`app2unit`](https://github.com/Vladimir-csp/app2unit)
--   [`libcava`](https://github.com/LukashonakV/cava)
--   [`networkmanager`](https://gitlab.freedesktop.org/NetworkManager/NetworkManager)
--   [`lm_sensors`](https://github.com/lm-sensors/lm-sensors)
--   [`aubio`](https://github.com/aubio/aubio)
--   [`libpipewire`](https://github.com/PipeWire/pipewire)
--   [`libqalculate`](https://github.com/Qalculate/libqalculate)
--   [`protobuf`](https://protobuf.dev/)
--   [`bash`](https://www.gnu.org/software/bash)
--   `qt6-base`
--   `qt6-declarative`
-  
-Build dependencies:
-
--   [`cmake`](https://gitlab.kitware.com/cmake/cmake)
--   [`ninja`](https://github.com/ninja-build/ninja)
-</details>
-
-**To install the shell, you can either use [pkgit](https://git.symlinx.net/pkgit) or the [AUR package](https://aur.archlinux.org/packages/midnight-shell-git)**
-
-Using `pkgit`:
-
-Install [`pkgit`](https://git.symlinx.net/pkgit) (also available on the AUR as [`pkgit-git`](https://aur.archlinux.org/packages/pkgit-git)).
-
-Then you can simply install the shell directly from GitHub without cloning it:
-
-```sh
-pkgit -i https://github.com/dim-ghub/midnight-shell
-```
-
-
-Using `AUR`
-```sh
-paru -S midnight-shell-git
-# or yay -S midnight-shell-git
-```
-
-> [!NOTE]
-> The recommended way to fully install MiDnight Shell is using [MiDnight CLI](https://github.com/dim-ghub/midnight-cli)'s command "`caelestia install`".
+> This repository is a **FORK**, and can be out of date or have missing features from the [upstream](https://github.com/dim-ghub/midnight-shell).
+> This fork is available at [stringptr/midnight-shell](https://github.com/stringptr/midnight-shell).
 
 #### Manual installation
 
@@ -121,13 +69,14 @@ sudo cmake --install build
 > ```
 
 ### Nix
+>
 > [!WARNING]
 > This repository has limited/no support for NixOS! Proceed at your own risk.
 
 You can run the shell directly via `nix run`:
 
 ```sh
-nix run github:dim-ghub/midnight-shell
+nix run github:stringptr/midnight-shell
 ```
 
 Or add it to your system configuration:
@@ -138,7 +87,7 @@ Or add it to your system configuration:
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
     midnight-shell = {
-      url = "github:dim-ghub/midnight-shell";
+      url = "github:stringptr/midnight-shell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -149,63 +98,10 @@ The package is available as `midnight-shell.packages.<system>.default`, which ca
 `environment.systemPackages`, `users.users.<username>.packages`, `home.packages` if using home-manager,
 or a devshell. The shell can then be run via `midnight-shell`.
 
-> [!TIP]
-> The default package does not have the CLI enabled by default, which is required for full funcionality.
-> To enable the CLI, use the `with-cli` package.
-
-For home-manager, you can also use the MiDnight's home manager module (explained in [home manager module](#home-manager-module)) that installs and configures the shell and the CLI.
-
 ## Components
 
--   Widgets: [`Quickshell`](https://quickshell.outfoxxed.me)
--   Window manager: [`Niri`](https://github.com/YaLTeR/niri)
--   Dots: [`caelestia`](https://github.com/caelestia-dots)
-
-## Global Shortcuts
-
-All keybinds are accessible via Niri global shortcuts.
-
-### Available Shortcuts
-
-| Shortcut Name | Description |
-|---------------|-------------|
-| `caelestia:controlCenter` | Open control center |
-| `caelestia:launcher` | Toggle launcher |
-| `caelestia:dashboard` | Toggle dashboard |
-| `caelestia:session` | Toggle session menu |
-| `caelestia:sidebar` | Toggle sidebar |
-| `caelestia:utilities` | Toggle utilities panel |
-| `caelestia:emoji` | Open emoji picker |
-| `caelestia:clipboard` | Open clipboard history |
-| `caelestia:windowSwitcher` | Open window switcher |
-| `caelestia:keybinds` | Open keybinds list |
-| `caelestia:wallpaper` | Open wallpaper picker |
-| `caelestia:showall` | Toggle all UI elements |
-| `caelestia:terminal` | Toggle terminal drawer |
-
-### Niri Keybind Examples
-
-To bind these shortcuts in Niri, add to your config:
-
-```conf
-# Launcher and UI elements
-bind = SUPER, SPACE, global, caelestia:launcher
-bind = SUPER, RETURN, global, caelestia:launcher
-bind = SUPER, S, global, caelestia:controlCenter
-
-# New features in this fork
-bind = SUPER, E, global, caelestia:emoji
-bind = SUPER, V, global, caelestia:clipboard
-bind = SUPER, W, global, caelestia:windowSwitcher
-bind = SUPER, K, global, caelestia:keybinds
-bind = SUPER, B, global, caelestia:wallpaper
-bind = SUPER, T, global, caelestia:terminal
-
-# Other toggles
-bind = SUPER, D, global, caelestia:dashboard
-bind = SUPER, N, global, caelestia:sidebar
-bind = SUPER, M, global, caelestia:utilities
-```
+- Widgets: [`Quickshell`](https://quickshell.outfoxxed.me)
+- Window manager: [`Niri`](https://github.com/YaLTeR/niri)
 
 ## Migration from Official Caelestia
 
@@ -261,25 +157,11 @@ If you're migrating from the official caelestia shell to this fork, you may need
 
 ## Usage
 
-You can start the shell by running `caelestia shell -d` (preferred) or `qs -c caelestia -n -d`.
-You may omit `-d` from the command to keep the shell attached to the current terminal if necessary,
-though you likely want it to be detached (so it doesn't close when the terminal is closed).
-
-If using the [Caelestia dotfiles][dots-repo], the shell will be autostarted on login
-via Niri's config.
-
 ### Shortcuts/IPC
 
 All keybinds are accessible via Niri global shortcuts.
-If using the entire caelestia dots, the keybinds are already configured for you.
 
-All IPC commands can be accessed via `caelestia shell ...`, for example:
-
-```sh
-caelestia shell mpris getActive trackTitle
-```
-
-You can view the list of available IPC commands by running `caelestia shell -s`.
+All IPC commands can be accessed via `qs -c ~/.config/quickshell/caelestia ipc show`, for example:
 
 ### PFP/Wallpapers
 
@@ -292,32 +174,6 @@ by default. To change it, modify `paths.wallpaperDir` in `~/.config/caelestia/sh
 To set the wallpaper, you can type `>wallpaper` in the launcher to open the wallpaper switcher.
 Alternatively, you can also use `caelestia wallpaper -f <path_to_wallpaper>` to set the wallpaper directly.
 Use `caelestia wallpaper -h` for more info about this command.
-
-## Updating
-
-### Packaged install (AUR)
-
-If you installed via `pkgit`, you can update using `pkgit -u`.
-> [!NOTE]
-> If `pkgit -u` fails to update the shell for any reason, run `pkgit -fi midnight-shell`. If that command throws an error, simply run it again.
-
-If installed manually, pull the latest changes and re-run the installation:
-
-```sh
-cd $XDG_CONFIG_HOME/quickshell/caelestia
-git pull
-pkgit -i .
-```
-
-## Uninstalling
-
-To cleanly uninstall the shell and its components, simply run `pkgit`'s uninstall command:
-
-```sh
-pkgit -r midnight-shell
-```
-
-or your AUR helper's uninstall command.
 
 ## Configuring
 
@@ -336,7 +192,6 @@ niri msg -j outputs | jq -r 'keys[]'
 
 Options set in these files will **override** the respective options in the global config. Any options not present in
 per-monitor configs will inherit their values from the global config.
-
 
 For example, to automatically hide the bar on the monitor named `DP-1`:
 
@@ -1360,113 +1215,3 @@ token values to produce the final computed values.
 
 Per-monitor token overrides are also available at
 `~/.config/caelestia/monitors/<monitor_name>/shell-tokens.json`.
-
-### Home Manager Module
-
-For NixOS users, a Home Manager module is also available.
-
-<details><summary><code>home.nix</code></summary>
-
-```nix
-programs.caelestia = {
-  enable = true;
-  systemd = {
-    enable = false; # if you prefer starting from your compositor
-    target = "graphical-session.target";
-    environment = [];
-  };
-  settings = {
-    bar.statusIcons = [
-      { id = "lockStatus"; enabled = true; }
-      { id = "network"; enabled = true; }
-      { id = "bluetooth"; enabled = true; }
-      { id = "battery"; enabled = false; }
-    ];
-    paths.wallpaperDir = "~/Images";
-  };
-  cli = {
-    enable = true; # Also add caelestia-cli to path
-    settings = {
-      theme.enableGtk = false;
-    };
-  };
-};
-```
-
-The module automatically adds the shell to the path with **full functionality**. The CLI is not required; however, you can enable and configure it.
-
-</details>
-
-## FAQ
-
-### Need help or support?
-
-You can join the Caelestia Discord server for assistance and discussion [here][discord].
-
-### I want to make my own changes to the Niri config!
-
-You can add your custom Niri config to `~/.config/niri/config.kdl`.
-
-### How do I enable blur for the Polkit dialog?
-
-Add the following layer rule to your Niri config:
-
-```kdl
-layer-rule {
-    match namespace="caelestia-polkit"
-    place-within-backdrop true
-}
-```
-
-### I want to make my own changes to other stuff!
-
-See the [manual installation](#manual-installation) section for this fork.
-
-### I want to disable ___ feature!
-
-Please read the [configuring](#configuring) section in the readme.
-If there is no corresponding option, make feature request.
-
-### How do I make my colour scheme change to match my wallpaper?
-
-Set a wallpaper via `>wallpaper` in the launcher or `caelestia wallpaper`, and set the scheme to the dynamic scheme via 
-`>scheme` in the launcher or `caelestia scheme set`, e.g.:
-
-```sh
-caelestia wallpaper -f <path_to_wallpaper>
-caelestia scheme set -n dynamic
-```
-
-### My wallpapers aren't showing up in the launcher!
-
-The launcher pulls wallpapers from `~/Pictures/Wallpapers` by default. You can change this in the config. Additionally,
-the launcher only shows an odd number of wallpapers at one time. If you only have 2 wallpapers, consider getting more
-(or just putting one).
-
-## Credits
-
-Thanks to the Hyprland Discord community (especially the homies in #rice-discussion) for all the help and suggestions
-for improving these dots!
-
-A special thanks to [@outfoxxed](https://github.com/outfoxxed) for making Quickshell and the effort put into fixing issues
-and implementing various feature requests.
-
-Another special thanks to [@end_4](https://github.com/end-4) for his [config](https://github.com/end-4/dots-hyprland)
-which helped me a lot with learning how to use Quickshell.
-
-Finally, another thank you to all the configs I took inspiration from (only one for now):
-
--   [Axenide/Ax-Shell](https://github.com/Axenide/Ax-Shell)
-
-## Stonks 📈
-
-<a href="https://www.star-history.com/#dim-ghub/midnight-shell&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=dim-ghub/midnight-shell&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=dim-ghub/midnight-shell&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=dim-ghub/midnight-shell&type=Date" />
- </picture>
-</a>
-
-[dots-repo]: https://github.com/caelestia-dots/caelestia
-[discord]: https://caelestiashell.com/discord
