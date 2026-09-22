@@ -73,6 +73,14 @@ void SessionIcons::removeCustomIcon(const QString& key) {
     emit customIconsChanged();
 }
 
+void SessionIcons::clearCustomIcons() {
+    if (m_customIcons.isEmpty())
+        return;
+    m_customIcons.clear();
+    m_customIconKeys.clear();
+    emit customIconsChanged();
+}
+
 // --- SessionCommands ---
 
 bool SessionCommands::syncJson(const QJsonValue& json, QList<settings::Diagnostic>& diagnostics) {
@@ -133,7 +141,31 @@ void SessionCommands::removeCustomCommand(const QString& key) {
     emit customCommandsChanged();
 }
 
+void SessionCommands::clearCustomCommands() {
+    if (m_customCommands.isEmpty())
+        return;
+    m_customCommands.clear();
+    m_customCommandKeys.clear();
+    emit customCommandsChanged();
+}
+
 // --- SessionConfig ---
+
+SessionConfig::SessionConfig(SessionConfig* fallback, QObject* parent, bool globalOnly)
+    : settings::ObjectNode(fallback, parent, globalOnly) {
+    QObject::connect(icons(), &SessionIcons::customIconsChanged, this, &SessionConfig::refreshButtons);
+    QObject::connect(commands(), &SessionCommands::customCommandsChanged, this, &SessionConfig::refreshButtons);
+}
+
+bool SessionConfig::syncJson(const QJsonValue& json, QList<settings::Diagnostic>& diagnostics) {
+    // Clear stale custom keys before re-syncing so removed buttons don't persist
+    icons()->clearCustomIcons();
+    commands()->clearCustomCommands();
+
+    const bool ok = settings::ObjectNode::syncJson(json, diagnostics);
+    refreshButtons();
+    return ok;
+}
 
 void SessionConfig::refreshButtons() {
     emit buttonsChanged();

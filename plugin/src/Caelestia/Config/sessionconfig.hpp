@@ -31,6 +31,7 @@ public:
 
     void setCustomIcon(const QString& key, const QString& icon);
     void removeCustomIcon(const QString& key);
+    void clearCustomIcons();
 
     [[nodiscard]] QJsonValue toJson(bool sparse = true) const override;
     bool syncJson(const QJsonValue& json, QList<settings::Diagnostic>& diagnostics) override;
@@ -57,6 +58,7 @@ public:
 
     void setCustomCommand(const QString& key, const QStringList& command);
     void removeCustomCommand(const QString& key);
+    void clearCustomCommands();
 
     [[nodiscard]] QJsonValue toJson(bool sparse = true) const override;
     bool syncJson(const QJsonValue& json, QList<settings::Diagnostic>& diagnostics) override;
@@ -70,7 +72,8 @@ private:
 };
 
 class SessionConfig : public settings::ObjectNode {
-    CONFIG_NODE(SessionConfig, settings::ObjectNode)
+    CONFIG_NODE_NO_CTOR(SessionConfig, settings::ObjectNode)
+    QML_ANONYMOUS
 
     CONFIG_PROPERTY(bool, enabled, true)
     CONFIG_PROPERTY(int, dragThreshold, 30)
@@ -82,8 +85,12 @@ class SessionConfig : public settings::ObjectNode {
     Q_PROPERTY(QVariantList customButtons READ customButtons NOTIFY customButtonsChanged)
 
 public:
+    explicit SessionConfig(SessionConfig* fallback = nullptr, QObject* parent = nullptr, bool globalOnly = false);
+
     [[nodiscard]] QVariantList buttons() const;
     [[nodiscard]] QVariantList customButtons() const;
+
+    [[nodiscard]] bool syncJson(const QJsonValue& json, QList<settings::Diagnostic>& diagnostics) override;
 
 signals:
     void buttonsChanged();

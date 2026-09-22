@@ -22,7 +22,7 @@ Column {
     Repeater {
         id: topButtonsRepeater
 
-        model: Config.session.buttons.slice(0, Math.min(2, Config.session.buttons.length))
+        model: Config.session.buttons.slice(0, Math.min(Config.session.buttons.length / 2, Config.session.buttons.length))
 
         SessionButton {
             id: topBtn
@@ -69,7 +69,7 @@ Column {
     Repeater {
         id: bottomButtonsRepeater
 
-        model: Config.session.buttons.length > 2 ? Config.session.buttons.slice(2) : []
+        model: Config.session.buttons.length > 2 ? Config.session.buttons.slice(Config.session.buttons.length / 2) : []
 
         SessionButton {
             required property var modelData
