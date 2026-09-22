@@ -64,6 +64,8 @@ class ServiceConfig : public settings::ObjectNode {
     CONFIG_GLOBAL_PROPERTY(bool, pipPaused, false)
     // Quick share
     CONFIG_GLOBAL_PROPERTY(bool, quickShareAutoStart, false)
+    // LED polling (capslock/numlock via sysfs)
+    CONFIG_GLOBAL_PROPERTY(bool, ledPollEnabled, true)
 };
 
 } // namespace caelestia::config

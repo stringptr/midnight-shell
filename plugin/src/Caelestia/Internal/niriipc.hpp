@@ -145,6 +145,7 @@ private slots:
     void onEventStreamConnected();
     void onEventStreamDisconnected();
     void onEvent(const QJsonObject& event);
+    void updateLedPolling();
 
 private:
     void fetchInitialState();

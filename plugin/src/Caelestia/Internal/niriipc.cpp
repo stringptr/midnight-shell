@@ -1,5 +1,8 @@
 #include "niriipc.hpp"
 
+#include "config/rootnodes.hpp"
+#include "config/serviceconfig.hpp"
+
 #include <qdir.h>
 #include <qfile.h>
 #include <qjsonarray.h>
@@ -753,9 +756,13 @@ void NiriIpc::setupLedWatchers() {
 
     // Poll sysfs since inotify doesn't work on virtual files
     if (!m_capsLockPath.isEmpty() || !m_numLockPath.isEmpty()) {
-        m_ledPollTimer.setInterval(1000);
-        connect(&m_ledPollTimer, &QTimer::timeout, this, &NiriIpc::readLedState);
-        m_ledPollTimer.start();
+        auto* svc = config::ConfigSingleton::instance()->services();
+        connect(svc, &config::ServiceConfig::ledPollEnabledChanged, this, &NiriIpc::updateLedPolling);
+        if (svc->ledPollEnabled()) {
+            m_ledPollTimer.setInterval(1000);
+            connect(&m_ledPollTimer, &QTimer::timeout, this, &NiriIpc::readLedState);
+            m_ledPollTimer.start();
+        }
     }
 }
 
@@ -778,6 +785,17 @@ void NiriIpc::readLedState() {
     if (m_numLock != newNum) {
         m_numLock = newNum;
         emit numLockChanged();
+    }
+}
+
+void NiriIpc::updateLedPolling() {
+    const bool enabled = config::ConfigSingleton::instance()->services()->ledPollEnabled();
+    if (enabled) {
+        if (!m_ledPollTimer.isActive()) {
+            m_ledPollTimer.start();
+        }
+    } else {
+        m_ledPollTimer.stop();
     }
 }
 

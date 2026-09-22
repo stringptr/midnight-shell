@@ -9,4 +9,7 @@ qml_module(caelestia-internal
         Qt::Quick
         Qt::Concurrent
         Qt::Network
+        caelestia-config
+    DEPENDENCIES
+        Caelestia.Config
 )
