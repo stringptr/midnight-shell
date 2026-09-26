@@ -21,6 +21,7 @@
 #include "osdconfig.hpp"
 #include "serviceconfig.hpp"
 #include "sessionconfig.hpp"
+#include "schemeconfig.hpp"
 #include "shimejiconfig.hpp"
 #include "sidebarconfig.hpp"
 #include "tokens.hpp"
@@ -46,6 +47,7 @@ class ConfigRoot : public settings::RootNode {
     CONFIG_SUBOBJECT(NotifsConfig, notifs)
     CONFIG_SUBOBJECT(OsdConfig, osd)
     CONFIG_SUBOBJECT(ServiceConfig, services)
+    CONFIG_SUBOBJECT(SchemeConfig, scheme)
     CONFIG_SUBOBJECT(SessionConfig, session)
     CONFIG_SUBOBJECT(SidebarConfig, sidebar)
     CONFIG_SUBOBJECT(UtilitiesConfig, utilities)

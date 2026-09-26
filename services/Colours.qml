@@ -93,6 +93,10 @@ Singleton {
     }
 
     function setMode(mode: string): void {
+        if (Wallpapers.externalColours) {
+            Wallpapers.runExternalColours(Wallpapers.actualCurrent || Wallpapers.fallback, mode);
+            return;
+        }
         Quickshell.execDetached(["caelestia", "scheme", "set", "--notify", "-m", mode]);
     }
 

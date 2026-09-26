@@ -47,9 +47,9 @@ StyledListView {
         case "calc":
             return [0];
         case "scheme":
-            return Schemes.query(text);
+            return Wallpapers.externalColours ? [] : Schemes.query(text);
         case "variant":
-            return M3Variants.query(text);
+            return Wallpapers.externalColours ? [] : M3Variants.query(text);
         case "emoji": {
             const prefix = GlobalConfig.launcher.actionPrefix;
             const queryText = text.slice((prefix + "emoji ").length).toLowerCase();

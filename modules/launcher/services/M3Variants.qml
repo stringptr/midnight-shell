@@ -17,6 +17,7 @@ Searcher {
     }
 
     function previewVariant(variant: string): void {
+        if (Wallpapers.externalColours) return;
         const cmd = `import json\nfrom caelestia.utils.scheme import get_scheme\nscheme = get_scheme()\nscheme.variant = "${variant}"\nscheme.update_colours()\nprint(json.dumps({"name": scheme.name, "flavour": scheme.flavour, "mode": scheme.mode, "variant": scheme.variant, "colours": scheme.colours}))`;
         getPreviewColoursProc.command = ["python3", "-c", cmd];
         getPreviewColoursProc.running = true;
@@ -97,6 +98,7 @@ Searcher {
         required property string description
 
         function onClicked(list: AppList): void {
+            if (Wallpapers.externalColours) return;
             list.screenState.launcher = false;
             Quickshell.execDetached(["caelestia", "scheme", "set", "-v", variant]);
         }

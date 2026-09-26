@@ -29,6 +29,8 @@
   pkg-config,
   caelestia-cli,
   m3shapes,
+  matugen,
+  wallust,
   debug ? false,
   withCli ? false,
   extraRuntimeDeps ? [],
@@ -48,6 +50,8 @@
       wl-clipboard
       libqalculate
       bash
+      matugen
+      wallust
     ]
     ++ extraRuntimeDeps
     ++ lib.optional withCli caelestia-cli;

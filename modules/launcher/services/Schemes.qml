@@ -5,6 +5,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Caelestia.Config
+import qs.services
 import qs.utils
 
 Searcher {
@@ -81,6 +82,7 @@ Searcher {
         readonly property var colours: modelData.colours
 
         function onClicked(list: AppList): void {
+            if (Wallpapers.externalColours) return;
             list.screenState.launcher = false;
             Quickshell.execDetached(["caelestia", "scheme", "set", "-n", name, "-f", flavour]);
         }

@@ -10,7 +10,7 @@
     };
 
     caelestia-cli = {
-      url = "github:dim-ghub/caelestia-cli";
+      url = "github:stringptr/midnight-cli";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.caelestia-shell.follows = "";
     };

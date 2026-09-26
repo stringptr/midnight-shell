@@ -26,6 +26,7 @@ qml_module(caelestia-config
         notifsconfig.hpp
         osdconfig.hpp
         serviceconfig.hpp
+        schemeconfig.hpp
         sessionconfig.hpp
         shimejiconfig.hpp
         sidebarconfig.hpp

@@ -15,6 +15,10 @@ Searcher {
 
     readonly property string currentNamePath: `${Paths.state}/wallpaper/path.txt`
     readonly property list<string> smartArg: GlobalConfig.services.smartScheme ? [] : ["--no-smart"]
+    // When an external colour tool (matugen/wallust) is enabled, the shell must
+    // never generate or apply colours itself
+    readonly property bool externalColours: GlobalConfig.scheme.useMatugen || GlobalConfig.scheme.useWallust
+    readonly property list<string> schemeArg: externalColours ? ["--no-scheme"] : []
     readonly property string fallback: Quickshell.shellPath("assets/wallpaper.webp")
 
     property bool showPreview: false
@@ -139,6 +143,65 @@ Searcher {
         wallpaperMode = mode;
     }
 
+    function applyWallpaper(path: string): void {
+        if (!path) return;
+        Quickshell.execDetached(["caelestia", "wallpaper", "-f", path, ...smartArg, ...schemeArg]);
+        if (externalColours) runExternalColours(path, "");
+    }
+
+    // Runs the enabled external colour tools for a wallpaper. modeOverride
+    // ("light"/"dark") replaces the configured matugen mode; wallust only gets
+    // it as a palette when matugen is not handling the mode.
+    function runExternalColours(path: string, modeOverride: string): void {
+        if (!path) return;
+        const img = getThumbnailPath(path);
+        const cfg = GlobalConfig.scheme;
+
+        if (cfg.useMatugen) {
+            const matugenCmd = ["matugen", "image", img];
+            if (cfg.matugenConfigPath) matugenCmd.push("-c", cfg.matugenConfigPath);
+            if (cfg.matugenType) matugenCmd.push("-t", cfg.matugenType);
+            const mode = modeOverride || cfg.matugenMode;
+            if (mode) matugenCmd.push("-m", mode);
+            if (cfg.matugenContrast) matugenCmd.push("--contrast", cfg.matugenContrast);
+            if (cfg.matugenSourceColorIndex) matugenCmd.push("--source-color-index", cfg.matugenSourceColorIndex);
+            if (cfg.matugenPrefix) matugenCmd.push("-p", cfg.matugenPrefix);
+            if (cfg.matugenOpacity) matugenCmd.push("--opacity", cfg.matugenOpacity);
+            Quickshell.execDetached(matugenCmd);
+        }
+
+        if (cfg.useWallust) {
+            const wallustCmd = ["wallust", "run", img];
+            if (cfg.wallustConfigPath) wallustCmd.push("-C", cfg.wallustConfigPath);
+            if (cfg.wallustBackend) wallustCmd.push("-b", cfg.wallustBackend);
+            if (cfg.wallustColorspace) wallustCmd.push("-c", cfg.wallustColorspace);
+            // Mode override wins over the configured palette (-p can only be given once)
+            if (modeOverride && !cfg.useMatugen) {
+                wallustCmd.push("-p", modeOverride === "light" ? "light" : "dark");
+            } else if (cfg.wallustPalette) {
+                wallustCmd.push("-p", cfg.wallustPalette);
+            }
+            // --dynamic-threshold conflicts with -t
+            if (cfg.wallustDynamicThreshold) {
+                wallustCmd.push("--dynamic-threshold");
+            } else if (cfg.wallustThreshold) {
+                wallustCmd.push("-t", cfg.wallustThreshold);
+            }
+            if (cfg.wallustSaturation) wallustCmd.push("--saturation", cfg.wallustSaturation);
+            if (cfg.wallustAlpha) wallustCmd.push("-a", cfg.wallustAlpha);
+            if (cfg.wallustCheckContrast) wallustCmd.push("-k");
+            if (cfg.wallustSkipSequences) wallustCmd.push("-s");
+            if (cfg.wallustSkipTemplates) wallustCmd.push("-T");
+            Quickshell.execDetached(wallustCmd);
+        }
+    }
+
+    // Regenerate colours after a backend toggle change: runs the enabled tools
+    // when external, otherwise restores caelestia's own colours
+    function refreshColours(): void {
+        applyWallpaper(actualCurrent || fallback);
+    }
+
     function captureRollbackState() {
         if (!isTrackingRollback) {
             rollbackPath = actualCurrent;
@@ -156,13 +219,13 @@ Searcher {
             actualCurrent = target;
             if (showPreview) {
                 previewPath = target;
-                if (String(Colours.scheme).startsWith("dynamic")) {
+                if (!externalColours && String(Colours.scheme).startsWith("dynamic")) {
                     if (!getPreviewColoursProc.running) {
                         getPreviewColoursProc.startFor(target);
                     }
                 }
             } else {
-                Quickshell.execDetached(["caelestia", "wallpaper", "-f", target, ...smartArg]);
+                applyWallpaper(target);
             }
         }
     }
@@ -172,7 +235,21 @@ Searcher {
     }
 
     function setRandom(): void {
-        Quickshell.execDetached(["caelestia", "wallpaper", "-r", ...smartArg]);
+        if (randomProc.running) randomProc.running = false;
+        randomProc.command = ["caelestia", "wallpaper", "-r", ...smartArg, ...schemeArg];
+        randomProc.running = true;
+    }
+
+    // Runs the random wallpaper switch so external tools can be started once
+    // the new wallpaper path is known (path.txt is written by the CLI)
+    Process {
+        id: randomProc
+
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0 || !root.externalColours) return;
+            const wall = CUtils.readFile(root.currentNamePath).trim();
+            if (wall) root.runExternalColours(wall, "");
+        }
     }
 
     function setWallpaper(path: string): void {
@@ -211,7 +288,7 @@ Searcher {
 
         stopPreview();
 
-        Quickshell.execDetached(["caelestia", "wallpaper", "-f", targetPath, ...smartArg]);
+        applyWallpaper(targetPath);
     }
 
     function preview(path: string): void {
@@ -226,7 +303,7 @@ Searcher {
         previewPath = clean;
         showPreview = true;
 
-        if (String(Colours.scheme).startsWith("dynamic")) {
+        if (!externalColours && String(Colours.scheme).startsWith("dynamic")) {
             if (!getPreviewColoursProc.running) {
                 getPreviewColoursProc.startFor(clean);
             }
@@ -245,7 +322,7 @@ Searcher {
             actualCurrent = rollbackPath;
             isTrackingRollback = false;
             
-            Quickshell.execDetached(["caelestia", "wallpaper", "-f", rollbackPath, ...smartArg]);
+            applyWallpaper(rollbackPath);
         }
 
         if (previewColourLock) {
@@ -323,7 +400,7 @@ Searcher {
             let wall = text().trim();
             if (!wall) {
                 wall = root.fallback;
-                Quickshell.execDetached(["caelestia", "wallpaper", "-f", root.fallback, ...root.smartArg]);
+                Quickshell.execDetached(["caelestia", "wallpaper", "-f", root.fallback, ...root.smartArg, ...root.schemeArg]);
             }
             root.actualCurrent = wall;
             root.previewColourLock = false;
@@ -339,7 +416,7 @@ Searcher {
         onLoadFailed: {
             root.actualCurrent = root.fallback;
             root.previewColourLock = false;
-            Quickshell.execDetached(["caelestia", "wallpaper", "-f", root.fallback, ...root.smartArg]);
+            Quickshell.execDetached(["caelestia", "wallpaper", "-f", root.fallback, ...root.smartArg, ...root.schemeArg]);
         }
     }
 
@@ -418,7 +495,7 @@ Searcher {
         command: ["caelestia", "wallpaper", "-p", currentProcessingPath, ...root.smartArg]
 
         function startFor(path) {
-            if (!path) return;
+            if (!path || root.externalColours) return;
             currentProcessingPath = path;
             running = true;
         }
