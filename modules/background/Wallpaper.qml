@@ -43,6 +43,9 @@ Item {
     readonly property bool isDynamicMonochrome: root.isDynamicScheme && root.currentVariantName === "monochrome"
     readonly property bool shouldRecolor: !!(Config.background && Config.background["wallpaperRecolor"]) && (!root.isDynamicScheme || root.isDynamicMonochrome)
 
+    readonly property real hOffset: Config.background ? (Config.background["wallpaperHorizontalOffset"] ?? 0.0) : 0.0
+    readonly property real vOffset: Config.background ? (Config.background["wallpaperVerticalOffset"] ?? 0.0) : 0.0
+
     readonly property var shapes: [MaterialShape.Circle, MaterialShape.Square, MaterialShape.Diamond, MaterialShape.ClamShell, MaterialShape.Pentagon, MaterialShape.Gem, MaterialShape.Clover4Leaf, MaterialShape.SoftBurst, MaterialShape.Cookie6Sided]
 
     function toFileUrl(path) {
@@ -322,19 +325,28 @@ Item {
                 }
             }
 
-            CachingAnimatedImage {
-                id: gifImg
+            Item {
                 anchors.fill: parent
-                // Only GIFs go through the animated-image path; videos are handled
-                // by the video channel loader below and must never reach AnimatedImage.
-                path: img.isGif ? img.verifiedPath : ""
-                playing: !WallpaperPauser.paused
-                visible: img.isGif && !img.isVideo
-                asynchronous: true
+                clip: true
 
-                onStatusChanged: {
-                    if (status === Image.Ready && img.isGif && img.verifiedPath === root.settledSource)
-                        root.current = img;
+                CachingAnimatedImage {
+                    id: gifImg
+                    anchors.centerIn: parent
+                    width: parent.width * (1 + Math.abs(root.hOffset) * 0.4)
+                    height: parent.height * (1 + Math.abs(root.vOffset) * 0.4)
+                    x: root.hOffset * (parent.width - width) / 2
+                    y: root.vOffset * (parent.height - height) / 2
+                    // Only GIFs go through the animated-image path; videos are handled
+                    // by the video channel loader below and must never reach AnimatedImage.
+                    path: img.isGif ? img.verifiedPath : ""
+                    playing: !WallpaperPauser.paused
+                    visible: img.isGif && !img.isVideo
+                    asynchronous: true
+
+                    onStatusChanged: {
+                        if (status === Image.Ready && img.isGif && img.verifiedPath === root.settledSource)
+                            root.current = img;
+                    }
                 }
             }
 
@@ -342,6 +354,8 @@ Item {
                 id: thumbImg
                 anchors.fill: parent
                 path: img.verifiedPath
+                hOffset: root.hOffset
+                vOffset: root.vOffset
                 source: {
                     if (!img.verifiedPath)
                         return "";
@@ -404,6 +418,8 @@ Item {
                     if (item && img.verifiedPath !== "") {
                         item.videoSource = root.toFileUrl(img.verifiedPath);
                         item.autoStart = !WallpaperPauser.paused;
+                        item.hOffset = root.hOffset;
+                        item.vOffset = root.vOffset;
                     }
                 }
             }

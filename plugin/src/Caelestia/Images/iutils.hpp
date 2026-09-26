@@ -16,7 +16,7 @@ class IUtils : public QObject {
 public:
     static IUtils* create(QQmlEngine* engine, QJSEngine* jsEngine);
 
-    Q_INVOKABLE static QUrl urlForPath(const QString& path, int fillMode);
+    Q_INVOKABLE static QUrl urlForPath(const QString& path, int fillMode, qreal hOffset = 0.0, qreal vOffset = 0.0);
     Q_INVOKABLE static QUrl animatedUrlForPath(const QString& path);
     Q_INVOKABLE static bool isGif(const QString& path);
     Q_INVOKABLE static bool isVideo(const QString& path);

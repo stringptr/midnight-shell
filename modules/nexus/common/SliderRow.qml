@@ -24,6 +24,8 @@ ConnectedRect {
     property alias label: label.text
     property alias valueLabel: valueLabel.text
     property real value
+    property real from: 0.0
+    property real to: 1.0
 
     signal moved(value: real)
     signal interaction(value: real)
@@ -99,9 +101,9 @@ ConnectedRect {
                 function onWheel(event: WheelEvent): void {
                     const step = GlobalConfig.services.audioIncrement;
                     if (event.angleDelta.y > 0)
-                        root.moved(Math.min(1, root.value + step));
+                        root.moved(Math.min(root.to, root.value + step));
                     else if (event.angleDelta.y < 0)
-                        root.moved(Math.max(0, root.value - step));
+                        root.moved(Math.max(root.from, root.value - step));
                 }
 
                 Layout.fillWidth: true
@@ -114,6 +116,8 @@ ConnectedRect {
                     implicitHeight: parent.implicitHeight
 
                     radius: Tokens.rounding.small
+                    from: root.from
+                    to: root.to
                     value: root.value
                     enabled: root.enabled
                     onInteraction: v => {

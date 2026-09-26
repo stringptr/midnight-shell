@@ -260,6 +260,32 @@ PageBase {
             onMoved: v => GlobalConfig.background.wallpaperRecolorStrength = v
         }
 
+        SliderRow {
+            Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
+            Layout.fillWidth: true
+            icon: "swap_horiz"
+            label: qsTr("Horizontal offset")
+            valueLabel: Math.round(value * 100) + "%"
+            from: -1.0
+            to: 1.0
+            value: Config.background.wallpaperHorizontalOffset
+            enabled: Config.background.wallpaperEnabled
+            onMoved: v => GlobalConfig.background.wallpaperHorizontalOffset = v
+        }
+
+        SliderRow {
+            Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
+            Layout.fillWidth: true
+            icon: "swap_vert"
+            label: qsTr("Vertical offset")
+            valueLabel: Math.round(value * 100) + "%"
+            from: -1.0
+            to: 1.0
+            value: Config.background.wallpaperVerticalOffset
+            enabled: Config.background.wallpaperEnabled
+            onMoved: v => GlobalConfig.background.wallpaperVerticalOffset = v
+        }
+
         SelectRow {
             Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
             Layout.fillWidth: true

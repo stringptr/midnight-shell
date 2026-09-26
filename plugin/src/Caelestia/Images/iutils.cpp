@@ -32,7 +32,7 @@ IUtils* IUtils::create(QQmlEngine* engine, QJSEngine* jsEngine) {
     return s_instance;
 }
 
-QUrl IUtils::urlForPath(const QString& path, int fillMode) {
+QUrl IUtils::urlForPath(const QString& path, int fillMode, qreal hOffset, qreal vOffset) {
     if (path.isEmpty())
         return {};
 
@@ -52,7 +52,12 @@ QUrl IUtils::urlForPath(const QString& path, int fillMode) {
     QUrl url;
     url.setScheme(u"image"_s);
     url.setHost(prefix);
-    url.setPath(path.startsWith(u'/') ? path : u'/' + path);
+
+    QString pathPart = path.startsWith(u'/') ? path : u'/' + path;
+    if (hOffset != 0.0 || vOffset != 0.0) {
+        pathPart += u"?ho=%1&vo=%2"_s.arg(QString::number(hOffset, 'f', 3), QString::number(vOffset, 'f', 3));
+    }
+    url.setPath(pathPart);
     return url;
 }
 

@@ -21,15 +21,15 @@ public:
     static ImageCacher* instance();
 
     static const QString& cacheDir();
-    static QString cachePathFor(const QString& sourcePath, const QSize& size, FillMode fillMode);
+    static QString cachePathFor(const QString& sourcePath, const QSize& size, FillMode fillMode, qreal hOffset = 0.0, qreal vOffset = 0.0);
 
-    void schedule(const QString& sourcePath, const QSize& size, FillMode fillMode);
-    void schedule(const QString& sourcePath, const QString& cachePath, const QSize& size, FillMode fillMode);
+    void schedule(const QString& sourcePath, const QSize& size, FillMode fillMode, qreal hOffset = 0.0, qreal vOffset = 0.0);
+    void schedule(const QString& sourcePath, const QString& cachePath, const QSize& size, FillMode fillMode, qreal hOffset = 0.0, qreal vOffset = 0.0);
 
 private:
     explicit ImageCacher(QObject* parent = nullptr);
 
-    static void runJob(const QString& sourcePath, const QString& cachePath, const QSize& size, FillMode fillMode);
+    static void runJob(const QString& sourcePath, const QString& cachePath, const QSize& size, FillMode fillMode, qreal hOffset, qreal vOffset);
 
     QMutex m_mutex;
     QSet<QString> m_inflight;

@@ -85,6 +85,8 @@ class BackgroundConfig : public settings::ObjectNode {
     CONFIG_PROPERTY(bool, wallpaperEnabled, true)
     CONFIG_PROPERTY(bool, wallpaperRecolor, false)
     CONFIG_PROPERTY(qreal, wallpaperRecolorStrength, 0.5)
+    CONFIG_PROPERTY(qreal, wallpaperHorizontalOffset, 0.0)
+    CONFIG_PROPERTY(qreal, wallpaperVerticalOffset, 0.0)
     CONFIG_PROPERTY(bool, videoWallpaperPaused, false)
     CONFIG_PROPERTY(bool, videoWallpaperSoundEnabled, false)
     CONFIG_PROPERTY(bool, videoWallpaperPauseOnFullscreen, false)

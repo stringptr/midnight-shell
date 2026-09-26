@@ -48,6 +48,12 @@ QString fillSuffix(ImageCacher::FillMode fillMode) {
     }
 }
 
+QString offsetSuffix(qreal hOffset, qreal vOffset) {
+    if (hOffset == 0.0 && vOffset == 0.0)
+        return {};
+    return u"_h%1_v%2"_s.arg(QString::number(qRound(hOffset * 100)), QString::number(qRound(vOffset * 100)));
+}
+
 } // namespace
 
 const QString& ImageCacher::cacheDir() {
@@ -60,13 +66,13 @@ const QString& ImageCacher::cacheDir() {
     return k_dir;
 }
 
-QString ImageCacher::cachePathFor(const QString& sourcePath, const QSize& size, FillMode fillMode) {
+QString ImageCacher::cachePathFor(const QString& sourcePath, const QSize& size, FillMode fillMode, qreal hOffset, qreal vOffset) {
     const QString sha = sha256sum(sourcePath);
     if (sha.isEmpty())
         return {};
 
-    const QString filename = u"%1@%2x%3-%4.png"_s.arg(
-        sha, QString::number(size.width()), QString::number(size.height()), fillSuffix(fillMode));
+    const QString filename = u"%1@%2x%3-%4%5.png"_s.arg(
+        sha, QString::number(size.width()), QString::number(size.height()), fillSuffix(fillMode), offsetSuffix(hOffset, vOffset));
 
     return cacheDir() + u'/' + filename;
 }
@@ -79,11 +85,11 @@ ImageCacher* ImageCacher::instance() {
 ImageCacher::ImageCacher(QObject* parent)
     : QObject(parent) {}
 
-void ImageCacher::schedule(const QString& sourcePath, const QSize& size, FillMode fillMode) {
-    schedule(sourcePath, cachePathFor(sourcePath, size, fillMode), size, fillMode);
+void ImageCacher::schedule(const QString& sourcePath, const QSize& size, FillMode fillMode, qreal hOffset, qreal vOffset) {
+    schedule(sourcePath, cachePathFor(sourcePath, size, fillMode, hOffset, vOffset), size, fillMode, hOffset, vOffset);
 }
 
-void ImageCacher::schedule(const QString& sourcePath, const QString& cachePath, const QSize& size, FillMode fillMode) {
+void ImageCacher::schedule(const QString& sourcePath, const QString& cachePath, const QSize& size, FillMode fillMode, qreal hOffset, qreal vOffset) {
     if (cachePath.isEmpty())
         return;
 
@@ -94,15 +100,15 @@ void ImageCacher::schedule(const QString& sourcePath, const QString& cachePath, 
         m_inflight.insert(cachePath);
     }
 
-    QThreadPool::globalInstance()->start([this, sourcePath, cachePath, size, fillMode]() {
-        runJob(sourcePath, cachePath, size, fillMode);
+    QThreadPool::globalInstance()->start([this, sourcePath, cachePath, size, fillMode, hOffset, vOffset]() {
+        runJob(sourcePath, cachePath, size, fillMode, hOffset, vOffset);
         const QMutexLocker locker(&m_mutex);
         // NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage) m_inflight is a value member, not a pointer
         m_inflight.remove(cachePath);
     });
 }
 
-void ImageCacher::runJob(const QString& sourcePath, const QString& cachePath, const QSize& size, FillMode fillMode) {
+void ImageCacher::runJob(const QString& sourcePath, const QString& cachePath, const QSize& size, FillMode fillMode, qreal hOffset, qreal vOffset) {
     if (QFile::exists(cachePath)) {
         return;
     }
@@ -141,8 +147,13 @@ void ImageCacher::runJob(const QString& sourcePath, const QString& cachePath, co
         canvas = QImage(size, QImage::Format_ARGB32);
         canvas.fill(Qt::transparent);
 
+        const qreal maxOffsetX = static_cast<qreal>(size.width() - image.width()) / 2.0;
+        const qreal maxOffsetY = static_cast<qreal>(size.height() - image.height()) / 2.0;
+        const int x = qRound((size.width() - image.width()) / 2.0 + maxOffsetX * hOffset);
+        const int y = qRound((size.height() - image.height()) / 2.0 + maxOffsetY * vOffset);
+
         QPainter painter(&canvas);
-        painter.drawImage((size.width() - image.width()) / 2, (size.height() - image.height()) / 2, image);
+        painter.drawImage(x, y, image);
         painter.end();
     }
 

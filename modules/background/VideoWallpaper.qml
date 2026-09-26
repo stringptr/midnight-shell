@@ -6,6 +6,8 @@ Item {
 
     property url videoSource
     property bool autoStart: true
+    property real hOffset: 0.0
+    property real vOffset: 0.0
 
     // Expose active player state
     property alias playbackState: root._activePlaybackState
@@ -51,11 +53,20 @@ Item {
 
     // ── Player A ──
 
-    VideoOutput {
-        id: outputA
+    Item {
         anchors.fill: parent
-        fillMode: VideoOutput.PreserveAspectCrop
-        visible: root._usePlayerA
+        clip: true
+
+        VideoOutput {
+            id: outputA
+            anchors.centerIn: parent
+            width: parent.width * (1 + Math.abs(root.hOffset) * 0.4)
+            height: parent.height * (1 + Math.abs(root.vOffset) * 0.4)
+            x: root.hOffset * (parent.width - width) / 2
+            y: root.vOffset * (parent.height - height) / 2
+            fillMode: VideoOutput.PreserveAspectCrop
+            visible: root._usePlayerA
+        }
     }
 
     MediaPlayer {
@@ -101,11 +112,20 @@ Item {
 
     // ── Player B ──
 
-    VideoOutput {
-        id: outputB
+    Item {
         anchors.fill: parent
-        fillMode: VideoOutput.PreserveAspectCrop
-        visible: !root._usePlayerA
+        clip: true
+
+        VideoOutput {
+            id: outputB
+            anchors.centerIn: parent
+            width: parent.width * (1 + Math.abs(root.hOffset) * 0.4)
+            height: parent.height * (1 + Math.abs(root.vOffset) * 0.4)
+            x: root.hOffset * (parent.width - width) / 2
+            y: root.vOffset * (parent.height - height) / 2
+            fillMode: VideoOutput.PreserveAspectCrop
+            visible: !root._usePlayerA
+        }
     }
 
     MediaPlayer {
