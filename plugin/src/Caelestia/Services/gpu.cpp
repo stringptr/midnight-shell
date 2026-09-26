@@ -207,15 +207,72 @@ void Gpu::tick() {
         readGenericUsage();
         readGpuTemperature();
     } else if (m_type == GpuType::Nvidia) {
-        startNvidiaUsage();
+        if (isNvidiaPollingAllowed()) {
+            startNvidiaUsage();
+        } else {
+            resetUsage();
+        }
     } else {
         resetUsage();
     }
 }
 
+bool Gpu::isNvidiaPollingAllowed() const {
+    auto* svc = caelestia::config::ConfigSingleton::instance()->services();
+    const GpuMode mode = svc->gpuMode();
+
+    switch (mode) {
+    case GpuMode::Always:
+        return true;
+    case GpuMode::Never:
+        return false;
+    case GpuMode::Charging:
+        return isAcOnline();
+    default:
+        return true;
+    }
+}
+
+bool Gpu::isAcOnline() {
+    // Check common AC adapter paths
+    static const QStringList k_acPaths = {
+        u"/sys/class/power_supply/AC/online"_s,
+        u"/sys/class/power_supply/AC0/online"_s,
+        u"/sys/class/power_supply/ADP1/online"_s,
+        u"/sys/class/power_supply/ADP0/online"_s,
+    };
+
+    for (const QString& path : k_acPaths) {
+        QFile f(path);
+        if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            const QByteArray data = f.readAll().trimmed();
+            f.close();
+            bool ok = false;
+            const int val = data.toInt(&ok);
+            if (ok) {
+                return val == 1;
+            }
+        }
+    }
+
+    // If no AC adapter found, assume plugged in (always allow polling)
+    return true;
+}
+
 void Gpu::resolveGpu() {
     // Supersede any chain still in flight so its callbacks cannot write stale state
     const int generation = ++m_generation;
+
+    auto* svc = caelestia::config::ConfigSingleton::instance()->services();
+    const GpuMode mode = svc->gpuMode();
+
+    // When gpuMode is Never, treat GPU as None regardless of gpuType config
+    if (mode == GpuMode::Never) {
+        setType(GpuType::None);
+        setName({});
+        setDetecting(false);
+        return;
+    }
 
     if (m_userType != GpuType::Auto) {
         setType(m_userType);

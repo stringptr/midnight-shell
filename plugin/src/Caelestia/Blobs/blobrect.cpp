@@ -46,6 +46,21 @@ void BlobRect::updatePolish() {
 }
 
 void BlobRect::updatePhysics() {
+    // Skip physics entirely when deformScale is zero — no deformation to compute
+    if (m_deformScale == 0.0) {
+        if (m_physicsActive) {
+            m_dm00 = 1.0f;
+            m_dm01 = 0.0f;
+            m_dm11 = 1.0f;
+            m_dmVel00 = m_dmVel01 = m_dmVel11 = 0.0f;
+            m_deformMatrix = QMatrix4x4();
+            emit rawDeformMatrixChanged();
+            updateCenteredDeformMatrix();
+            m_physicsActive = false;
+        }
+        return;
+    }
+
     const QPointF scenePos = mapToScene(QPointF(width() / 2.0, height() / 2.0));
 
     if (!m_hasPrevPos) {

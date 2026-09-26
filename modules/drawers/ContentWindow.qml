@@ -155,8 +155,8 @@ StyledWindow {
         opacity: GlobalConfig.appearance.pitchBlack ? 1 : (Colours.transparency.enabled ? Colours.transparency.base : root.surfaceColour.a)
         layer.enabled: true
         layer.effect: MultiEffect {
-            shadowEnabled: true
-            blurMax: 15
+            shadowEnabled: GlobalConfig.appearance.shadow.enabled
+            blurMax: GlobalConfig.appearance.shadow.blurMax
             shadowColor: Qt.alpha(Colours.palette.m3shadow, Math.max(0, root.shadowOpacity))
         }
 

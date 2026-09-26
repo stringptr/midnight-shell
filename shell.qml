@@ -9,6 +9,7 @@ pragma ComponentBehavior: Bound
 import QtQml
 import Quickshell
 import Caelestia.Config
+import Caelestia.Services
 import qs.components.containers
 import qs.utils
 import qs.services
@@ -74,4 +75,9 @@ ShellRoot {
     property var _gameModeInit: GameMode
     property var _pipInit: PipManager
     property var _systemTrayInit: SystemTray
+
+    // Pre-warm Cpu/Memory/Storage services to avoid cold-start lag on first dashboard open
+    ServiceRef { service: Cpu }
+    ServiceRef { service: Memory }
+    ServiceRef { service: Storage }
 }

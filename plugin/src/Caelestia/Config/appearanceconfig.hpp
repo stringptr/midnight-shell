@@ -273,6 +273,13 @@ class AppearanceTransparency : public settings::ObjectNode {
     CONFIG_GLOBAL_PROPERTY(qreal, layers, 0.4)
 };
 
+class AppearanceShadow : public settings::ObjectNode {
+    CONFIG_NODE(AppearanceShadow, settings::ObjectNode)
+
+    CONFIG_GLOBAL_PROPERTY(bool, enabled, true)
+    CONFIG_GLOBAL_PROPERTY(qreal, blurMax, 15)
+};
+
 class AppearanceConfig : public settings::ObjectNode {
     CONFIG_NODE(AppearanceConfig, settings::ObjectNode)
 
@@ -283,6 +290,7 @@ class AppearanceConfig : public settings::ObjectNode {
     CONFIG_SUBOBJECT(AppearanceFont, font)
     CONFIG_SUBOBJECT(AppearanceAnim, anim)
     CONFIG_SUBOBJECT(AppearanceTransparency, transparency)
+    CONFIG_SUBOBJECT(AppearanceShadow, shadow)
     CONFIG_GLOBAL_PROPERTY(bool, pitchBlack, false)
     CONFIG_GLOBAL_PROPERTY(bool, islands, false)
 };

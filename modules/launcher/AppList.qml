@@ -22,8 +22,13 @@ StyledListView {
     readonly property string displayState: stateForText(displayText)
 
     function syncDisplayText(): void {
-        if (screenState.launcher && requestedState === displayState)
-            displayText = search.text;
+        if (screenState.launcher && requestedState === displayState) {
+            debounceTimer.restart();
+        }
+    }
+
+    function applyDisplayText(): void {
+        displayText = search.text;
     }
 
     function stateForText(text: string): string {
@@ -143,6 +148,13 @@ StyledListView {
                 M3Variants.previewVariant(variantData.variant);
             }
         }
+    }
+
+    Timer {
+        id: debounceTimer
+        interval: 50
+        repeat: false
+        onTriggered: root.applyDisplayText()
     }
 
     Component.onCompleted: displayText = search.text

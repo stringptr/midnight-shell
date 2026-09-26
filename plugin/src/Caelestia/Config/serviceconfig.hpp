@@ -32,6 +32,7 @@ class ServiceConfig : public settings::ObjectNode {
     CONFIG_GLOBAL_PROPERTY(
         bool, useTwelveHourClock, QLocale().timeFormat(QLocale::ShortFormat).toLower().contains(u"a"_s))
     CONFIG_GLOBAL_ENUM_PROPERTY(GpuType, gpuType, GpuType::Auto)
+    CONFIG_GLOBAL_ENUM_PROPERTY(GpuMode, gpuMode, GpuMode::Always)
     CONFIG_GLOBAL_PROPERTY(int, visualiserBars, 60)
     CONFIG_GLOBAL_PROPERTY(qreal, audioIncrement, 0.1)
     CONFIG_GLOBAL_PROPERTY(qreal, brightnessIncrement, 0.1)

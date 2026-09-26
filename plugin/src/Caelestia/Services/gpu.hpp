@@ -10,6 +10,7 @@
 namespace caelestia::services {
 
 using GpuType = config::GpuType::Enum;
+using GpuMode = config::GpuMode::Enum;
 
 class Gpu : public TickingService {
     Q_OBJECT
@@ -64,6 +65,12 @@ private:
     void setType(GpuType value);
     void setName(QString value);
     void setDetecting(bool value);
+
+    // Checks whether nvidia-smi polling is allowed based on gpuMode config
+    [[nodiscard]] bool isNvidiaPollingAllowed() const;
+
+    // Reads AC adapter online state from sysfs for "charging" mode
+    [[nodiscard]] static bool isAcOnline();
 
     // The config override, Auto meaning "resolve by probing". Read only to decide
     // whether to probe and which name sources apply; never exposed.

@@ -12,6 +12,8 @@ QtObject {
     property var items: []
     property var frequencies: ({})
     property bool _loaded: false
+    property var _sortedCache: null
+    property var _sortedCacheFrequencies: null
 
     property Process reader: Process {
         running: false
@@ -84,9 +86,12 @@ QtObject {
     function getSortedItems(): var {
         if (!items.length)
             return [];
+        // Return cached result if frequencies haven't changed
+        if (_sortedCache !== null && _sortedCacheFrequencies === frequencies)
+            return _sortedCache;
         const favEmojis = GlobalConfig.launcher.favouriteEmojis || [];
         const favSet = new Set(favEmojis);
-        return [...items].sort((a, b) => {
+        const sorted = [...items].sort((a, b) => {
             const aIsFav = favSet.has(a.char);
             const bIsFav = favSet.has(b.char);
             if (aIsFav !== bIsFav)
@@ -97,5 +102,8 @@ QtObject {
                 return freqB - freqA;
             return 0;
         });
+        _sortedCache = sorted;
+        _sortedCacheFrequencies = frequencies;
+        return sorted;
     }
 }

@@ -11,6 +11,8 @@ QtObject {
     id: root
 
     property var items: []
+    property bool _loaded: false
+    property var _sortedCache: null
 
     readonly property string imageCacheDir: "/tmp/caelestia-clipboard"
 
@@ -51,12 +53,16 @@ QtObject {
                 }
 
                 root.items = result;
+                root._loaded = true;
+                root._sortedCache = null;
                 preloadImages();
             }
         }
     }
 
     function reload(): void {
+        if (_loaded)
+            return;
         fetcher.running = true;
     }
 
@@ -72,6 +78,9 @@ QtObject {
     function getSortedItems(): var {
         if (!items.length)
             return [];
+        // Return cached result if items haven't changed
+        if (_sortedCache !== null && _loaded)
+            return _sortedCache;
         const favClips = new Set((GlobalConfig.launcher.favouriteClips || []).map(String));
         const favs = [];
         const rest = [];
@@ -82,7 +91,9 @@ QtObject {
                 rest.push(item);
             }
         }
-        return [...favs, ...rest];
+        const sorted = [...favs, ...rest];
+        _sortedCache = sorted;
+        return sorted;
     }
 
     function getImagePath(clipId: int): string {
