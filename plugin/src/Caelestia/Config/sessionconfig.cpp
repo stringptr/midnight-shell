@@ -10,7 +10,9 @@ namespace {
 const QSet<QString>& knownSessionKeys() {
     static const QSet<QString> keys = {
         u"logout"_s,
+        u"lock"_s,
         u"shutdown"_s,
+        u"sleep"_s,
         u"hibernate"_s,
         u"reboot"_s,
     };
@@ -155,6 +157,7 @@ SessionConfig::SessionConfig(SessionConfig* fallback, QObject* parent, bool glob
     : settings::ObjectNode(fallback, parent, globalOnly) {
     QObject::connect(icons(), &SessionIcons::customIconsChanged, this, &SessionConfig::refreshButtons);
     QObject::connect(commands(), &SessionCommands::customCommandsChanged, this, &SessionConfig::refreshButtons);
+    QObject::connect(this, &SessionConfig::buttonOrderChanged, this, &SessionConfig::refreshButtons);
 }
 
 bool SessionConfig::syncJson(const QJsonValue& json, QList<settings::Diagnostic>& diagnostics) {
@@ -180,37 +183,26 @@ QVariantList SessionConfig::buttons() const {
     if (!iconsNode || !commandsNode)
         return result;
 
-    static const QStringList defaultKeys = {
-        u"logout"_s,
-        u"shutdown"_s,
-        u"hibernate"_s,
-        u"reboot"_s,
-    };
+    const QStringList orderedKeys = buttonOrder();
 
-    QStringList orderedKeys;
-    QSet<QString> seen;
+    // Collect any custom keys not already in buttonOrder and append them
+    QSet<QString> seen(orderedKeys.begin(), orderedKeys.end());
+    QStringList allKeys = orderedKeys;
 
-    // Custom keys first (in captured order), then the standard four.
     for (const auto& key : iconsNode->customIconKeys()) {
         if (!seen.contains(key)) {
             seen.insert(key);
-            orderedKeys.append(key);
+            allKeys.append(key);
         }
     }
     for (const auto& key : commandsNode->customCommandKeys()) {
         if (!seen.contains(key)) {
             seen.insert(key);
-            orderedKeys.append(key);
-        }
-    }
-    for (const auto& key : defaultKeys) {
-        if (!seen.contains(key)) {
-            seen.insert(key);
-            orderedKeys.append(key);
+            allKeys.append(key);
         }
     }
 
-    for (const auto& key : orderedKeys) {
+    for (const auto& key : allKeys) {
         QVariantMap btn;
         btn.insert(u"key"_s, key);
 

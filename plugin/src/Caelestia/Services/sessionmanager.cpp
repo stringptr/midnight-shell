@@ -67,6 +67,7 @@ bool SessionManager::exec(const QStringList& command) {
 
     static const QHash<QString, void (SessionManager::*)()> k_cmds = {
         { u"logout"_s, &SessionManager::logout },
+        { u"lock"_s, &SessionManager::lock },
         { u"suspend"_s, &SessionManager::suspend },
         { u"suspendthenhibernate"_s, &SessionManager::suspendThenHibernate },
         { u"hibernate"_s, &SessionManager::hibernate },
@@ -80,6 +81,8 @@ bool SessionManager::exec(const QStringList& command) {
         cmd = command.at(1);
     if (cmd == u"loginctl"_s && command.size() == 3 && command.at(1) == u"terminate-user"_s && command.at(2).isEmpty())
         cmd = u"logout"_s; // Manual alias `loginctl terminate-user ''` -> logout
+    if (cmd == u"lock-session"_s)
+        cmd = u"lock"_s; // Manual alias `loginctl lock-session` -> lock
 
     // Normalise command
     cmd = cmd.remove(u'-').remove(u'_').toLower();
@@ -95,6 +98,10 @@ bool SessionManager::exec(const QStringList& command) {
 
 void SessionManager::logout() {
     callSession(u"Terminate"_s);
+}
+
+void SessionManager::lock() {
+    callSession(u"Lock"_s);
 }
 
 void SessionManager::suspend() {
