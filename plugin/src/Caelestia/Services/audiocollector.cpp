@@ -19,13 +19,15 @@ Q_LOGGING_CATEGORY(lcAcWorker, "caelestia.services.ac.worker", QtInfoMsg)
 
 namespace caelestia::services {
 
-PipeWireWorker::PipeWireWorker(std::stop_token token, AudioCollector* collector)
+PipeWireWorker::PipeWireWorker(std::stop_token token, AudioCollector* collector,
+                               const QString& targetNodeName)
     : m_loop(nullptr)
     , m_stream(nullptr)
     , m_timer(nullptr)
     , m_idle(true)
     , m_token(std::move(token))
-    , m_collector(collector) {
+    , m_collector(collector)
+    , m_targetNodeName(targetNodeName) {
     pw_init(nullptr, nullptr);
 
     m_loop = pw_main_loop_new(nullptr);
@@ -47,7 +49,12 @@ PipeWireWorker::PipeWireWorker(std::stop_token token, AudioCollector* collector)
 
     auto* props = pw_properties_new(
         PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Capture", PW_KEY_MEDIA_ROLE, "Music", nullptr);
-    pw_properties_set(props, PW_KEY_STREAM_CAPTURE_SINK, "true");
+    if (!m_targetNodeName.isEmpty()) {
+        QByteArray nameUtf8 = m_targetNodeName.toUtf8();
+        pw_properties_set(props, "target.object", nameUtf8.constData());
+    } else {
+        pw_properties_set(props, PW_KEY_STREAM_CAPTURE_SINK, "true");
+    }
     pw_properties_setf(
         props, PW_KEY_NODE_LATENCY, "%u/%u", nextPowerOf2(512 * ac::k_sampleRate / 48000), ac::k_sampleRate);
     pw_properties_set(props, PW_KEY_NODE_PASSIVE, "true");
@@ -250,7 +257,7 @@ void AudioCollector::start() {
     clearBuffer();
 
     m_thread = std::jthread([this](std::stop_token token) {
-        const PipeWireWorker worker(std::move(token), this);
+        const PipeWireWorker worker(std::move(token), this, m_targetNodeName);
     });
 }
 
@@ -258,6 +265,18 @@ void AudioCollector::stop() {
     if (m_thread.joinable()) {
         m_thread.request_stop();
         m_thread.join();
+    }
+}
+
+void AudioCollector::setTargetNodeName(const QString& name) {
+    if (m_targetNodeName == name) {
+        return;
+    }
+    m_targetNodeName = name;
+    if (refCount() > 0) {
+        stop();
+        clearBuffer();
+        start();
     }
 }
 

@@ -20,4 +20,8 @@ void Service::unref(QObject* sender) {
     }
 }
 
+int Service::refCount() const {
+    return m_refs.size();
+}
+
 } // namespace caelestia::services

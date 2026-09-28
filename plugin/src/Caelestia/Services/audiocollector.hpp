@@ -2,6 +2,7 @@
 
 #include <qmutex.h>
 #include <qqmlintegration.h>
+#include <qstring.h>
 
 #include <pipewire/pipewire.h>
 #include <spa/param/audio/format-utils.h>
@@ -26,7 +27,8 @@ class AudioCollector;
 
 class PipeWireWorker {
 public:
-    explicit PipeWireWorker(std::stop_token token, AudioCollector* collector);
+    explicit PipeWireWorker(std::stop_token token, AudioCollector* collector,
+                            const QString& targetNodeName = QString());
 
     void run();
 
@@ -38,6 +40,7 @@ private:
 
     std::stop_token m_token;
     AudioCollector* m_collector;
+    QString m_targetNodeName;
 
     static void handleTimeout(void* data, uint64_t expirations);
     void streamStateChanged(pw_stream_state state);
@@ -55,6 +58,7 @@ public:
 
     static AudioCollector& instance();
 
+    void setTargetNodeName(const QString& name);
     void clearBuffer();
     void loadChunk(const qint16* samples, quint32 count);
     quint32 readChunk(float* out, quint32 count = 0);
@@ -70,6 +74,7 @@ private:
     std::atomic<std::vector<float>*> m_readBuffer;
     std::atomic<std::vector<float>*> m_writeBuffer;
     quint32 m_sampleCount;
+    QString m_targetNodeName;
 
     void reload();
     void start() override;

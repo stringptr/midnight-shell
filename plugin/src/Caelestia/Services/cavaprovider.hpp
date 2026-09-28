@@ -44,6 +44,8 @@ class CavaProvider : public AudioProvider {
 
     Q_PROPERTY(QVector<double> values READ values NOTIFY valuesChanged)
 
+    Q_PROPERTY(QString targetNodeName READ targetNodeName WRITE setTargetNodeName NOTIFY targetNodeNameChanged)
+
 public:
     explicit CavaProvider(QObject* parent = nullptr);
 
@@ -52,13 +54,18 @@ public:
 
     [[nodiscard]] QVector<double> values() const;
 
+    [[nodiscard]] QString targetNodeName() const;
+    void setTargetNodeName(const QString& name);
+
 signals:
     void barsChanged();
     void valuesChanged();
+    void targetNodeNameChanged();
 
 private:
     int m_bars;
     QVector<double> m_values;
+    QString m_targetNodeName;
 
     void updateValues(const QVector<double>& values);
 };

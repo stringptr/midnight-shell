@@ -15,7 +15,20 @@ Item {
     required property ShellScreen screen
     required property Item wallpaper
 
-    readonly property bool appFilterActive: Config.background.visualiser.appFilter === VisualiserAppFilter.Disabled || Players.active === null || (Config.background.visualiser.appFilter === VisualiserAppFilter.Whitelist && Config.background.visualiser.filteredApps.some(a => Players.getIdentity(Players.active).toLowerCase().includes(a.toLowerCase()))) || (Config.background.visualiser.appFilter === VisualiserAppFilter.Blacklist && !Config.background.visualiser.filteredApps.some(a => Players.getIdentity(Players.active).toLowerCase().includes(a.toLowerCase())))
+    readonly property bool appFilterActive: {
+        const filter = Config.background.visualiser.appFilter;
+        if (filter === VisualiserAppFilter.Disabled) return true;
+        if (Players.list.length === 0) return true;
+        const filteredApps = Config.background.visualiser.filteredApps;
+        function isPlayerFiltered(player) {
+            const identity = Players.getIdentity(player).toLowerCase();
+            if (!identity) return false;
+            return filteredApps.some(a => identity.includes(a.toLowerCase()));
+        }
+        if (filter === VisualiserAppFilter.Whitelist) return Players.list.some(p => isPlayerFiltered(p));
+        if (filter === VisualiserAppFilter.Blacklist) return !Players.list.some(p => isPlayerFiltered(p));
+        return true;
+    }
     readonly property bool shouldBeActive: Config.background.visualiser.enabled && appFilterActive && !(GameMode.enabled && GlobalConfig.utilities.gameMode.disableVisualizer) && (!Config.background.visualiser.autoHide || (Niri.windows.filter(t => t.output === screen.name).every(t => t.floating) ?? true))
     property real offset: shouldBeActive ? 0 : screen.height * 0.2
 
@@ -24,6 +37,41 @@ Item {
     readonly property real fallbackMargin: Tokens.padding.large + Tokens.spacing.small
 
     opacity: shouldBeActive ? 1 : 0
+
+    Binding {
+        target: Audio.cava
+        property: "targetNodeName"
+        value: {
+            if (!root.appFilterActive || Players.list.length === 0) return "";
+            const filter = Config.background.visualiser.appFilter;
+            const filteredApps = Config.background.visualiser.filteredApps;
+            function isPlayerFiltered(player) {
+                const identity = Players.getIdentity(player).toLowerCase();
+                if (!identity) return false;
+                return filteredApps.some(a => identity.includes(a.toLowerCase()));
+            }
+            function matchStream(player) {
+                const identity = Players.getIdentity(player).toLowerCase();
+                if (!identity) return "";
+                const stream = Audio.streams.find(s => {
+                    const streamName = Audio.getStreamName(s).toLowerCase();
+                    const binary = (s.properties["application.process.binary"] ?? "").toString().toLowerCase();
+                    const appName = (s.properties["app.name"] ?? "").toString().toLowerCase();
+                    const names = [streamName, binary, appName].filter(n => n);
+                    return names.some(n => n.includes(identity) || identity.includes(n));
+                });
+                return stream?.name ?? "";
+            }
+            let targetPlayer = null;
+            if (filter === VisualiserAppFilter.Whitelist) {
+                targetPlayer = Players.list.find(p => isPlayerFiltered(p));
+            } else if (filter === VisualiserAppFilter.Blacklist) {
+                targetPlayer = Players.list.find(p => !isPlayerFiltered(p));
+            }
+            return targetPlayer ? matchStream(targetPlayer) : "";
+        }
+        restoreMode: Binding.RestoreNone
+    }
 
     Loader {
         asynchronous: true

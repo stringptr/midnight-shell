@@ -13,6 +13,7 @@ public:
 
     void ref(QObject* sender);
     void unref(QObject* sender);
+    [[nodiscard]] int refCount() const;
 
 private:
     QSet<QObject*> m_refs;

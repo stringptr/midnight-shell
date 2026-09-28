@@ -39,7 +39,7 @@ ItemList {
 
         anchors.left: root.list.contentItem.left
         anchors.right: root.list.contentItem.right
-        implicitHeight: deviceLayout.implicitHeight + deviceLayout.anchors.margins * 2 + (root.showVolume ? volumeRow.implicitHeight + volumeRow.anchors.topMargin : 0)
+        implicitHeight: col.implicitHeight + col.anchors.margins * 2
 
         StateLayer {
             radius: Tokens.rounding.extraSmall
@@ -49,8 +49,11 @@ ItemList {
         }
 
         ColumnLayout {
+            id: col
+
             anchors.fill: parent
             anchors.margins: Tokens.padding.medium
+            anchors.bottomMargin: root.showVolume ? Tokens.padding.medium + Tokens.spacing.extraSmall : Tokens.padding.medium
             spacing: 0
 
             RowLayout {

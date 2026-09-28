@@ -147,4 +147,17 @@ void CavaProvider::updateValues(const QVector<double>& values) {
     }
 }
 
+QString CavaProvider::targetNodeName() const {
+    return m_targetNodeName;
+}
+
+void CavaProvider::setTargetNodeName(const QString& name) {
+    if (m_targetNodeName == name) {
+        return;
+    }
+    m_targetNodeName = name;
+    emit targetNodeNameChanged();
+    AudioCollector::instance().setTargetNodeName(name);
+}
+
 } // namespace caelestia::services
