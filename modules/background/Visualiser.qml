@@ -15,7 +15,8 @@ Item {
     required property ShellScreen screen
     required property Item wallpaper
 
-    readonly property bool shouldBeActive: Config.background.visualiser.enabled && !(GameMode.enabled && GlobalConfig.utilities.gameMode.disableVisualizer) && (!Config.background.visualiser.autoHide || (Niri.windows.filter(t => t.output === screen.name).every(t => t.floating) ?? true))
+    readonly property bool appFilterActive: Config.background.visualiser.appFilter === VisualiserAppFilter.Disabled || Players.active === null || (Config.background.visualiser.appFilter === VisualiserAppFilter.Whitelist && Config.background.visualiser.filteredApps.some(a => Players.getIdentity(Players.active).toLowerCase().includes(a.toLowerCase()))) || (Config.background.visualiser.appFilter === VisualiserAppFilter.Blacklist && !Config.background.visualiser.filteredApps.some(a => Players.getIdentity(Players.active).toLowerCase().includes(a.toLowerCase())))
+    readonly property bool shouldBeActive: Config.background.visualiser.enabled && appFilterActive && !(GameMode.enabled && GlobalConfig.utilities.gameMode.disableVisualizer) && (!Config.background.visualiser.autoHide || (Niri.windows.filter(t => t.output === screen.name).every(t => t.floating) ?? true))
     property real offset: shouldBeActive ? 0 : screen.height * 0.2
 
     readonly property int barExclusiveZone: Visibilities.bars.get(root.screen.name)?.exclusiveZone ?? (Tokens.sizes.bar.innerWidth + Math.max(Tokens.padding.small, Config.border.thickness))

@@ -83,6 +83,64 @@ PageBase {
         }
 
         SectionHeader {
+            text: qsTr("App filter")
+        }
+
+        SelectRow {
+            first: true
+            Layout.fillWidth: true
+            label: qsTr("Filter mode")
+            subtext: qsTr("Only show visualiser for specific apps")
+            configNode: root.targetConfig.background.visualiser
+            propertyName: "appFilter"
+            menuItems: [
+                MenuItem { text: qsTr("Disabled") },
+                MenuItem { text: qsTr("Whitelist") },
+                MenuItem { text: qsTr("Blacklist") }
+            ]
+            active: {
+                switch (root.targetConfig.background.visualiser.appFilter) {
+                case VisualiserAppFilter.Whitelist: return menuItems[1];
+                case VisualiserAppFilter.Blacklist: return menuItems[2];
+                default: return menuItems[0];
+                }
+            }
+            onSelected: item => {
+                if (item === menuItems[1])
+                    root.targetConfig.background.visualiser.appFilter = VisualiserAppFilter.Whitelist;
+                else if (item === menuItems[2])
+                    root.targetConfig.background.visualiser.appFilter = VisualiserAppFilter.Blacklist;
+                else
+                    root.targetConfig.background.visualiser.appFilter = VisualiserAppFilter.Disabled;
+                root.targetConfig.save();
+            }
+            enabled: root.targetConfig.background.visualiser.enabled
+        }
+
+        TagRow {
+            last: true
+            Layout.fillWidth: true
+            label: qsTr("Filtered apps")
+            subtext: qsTr("App names to include or exclude (case-insensitive)")
+            configNode: root.targetConfig.background.visualiser
+            propertyName: "filteredApps"
+            values: root.targetConfig.background.visualiser.filteredApps
+            onValueAdded: value => {
+                const apps = root.targetConfig.background.visualiser.filteredApps;
+                apps.push(value);
+                root.targetConfig.background.visualiser.filteredApps = apps;
+                root.targetConfig.save();
+            }
+            onValueRemoved: index => {
+                const apps = root.targetConfig.background.visualiser.filteredApps;
+                apps.splice(index, 1);
+                root.targetConfig.background.visualiser.filteredApps = apps;
+                root.targetConfig.save();
+            }
+            enabled: root.targetConfig.background.visualiser.enabled && root.targetConfig.background.visualiser.appFilter !== VisualiserAppFilter.Disabled
+        }
+
+        SectionHeader {
             text: qsTr("Appearance")
         }
 

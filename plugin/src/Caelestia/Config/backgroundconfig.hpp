@@ -4,6 +4,7 @@
 
 #include "settings/objectnode.hpp"
 #include "common.hpp"
+#include "enums.hpp"
 
 namespace caelestia::config {
 
@@ -45,6 +46,8 @@ class BackgroundVisualiser : public settings::ObjectNode {
     CONFIG_PROPERTY(QString, renderer, QStringLiteral("gpu"))
     CONFIG_PROPERTY(qreal, rounding, 1)
     CONFIG_PROPERTY(qreal, spacing, 1)
+    CONFIG_ENUM_PROPERTY(VisualiserAppFilter, appFilter, VisualiserAppFilter::Disabled)
+    CONFIG_PROPERTY(QStringList, filteredApps, { u"Spotify"_s })
 };
 
 class DesktopLyricsBackground : public settings::ObjectNode {
