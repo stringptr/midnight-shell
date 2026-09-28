@@ -100,6 +100,27 @@ Singleton {
         return !!stream?.audio?.muted;
     }
 
+    function setNodeVolume(node: PwNode, newVolume: real): void {
+        if (node?.ready && node?.audio) {
+            node.audio.muted = false;
+            node.audio.volume = Math.max(0, Math.min(GlobalConfig.services.maxVolume, newVolume));
+        }
+    }
+
+    function setNodeMuted(node: PwNode, muted: bool): void {
+        if (node?.ready && node?.audio) {
+            node.audio.muted = muted;
+        }
+    }
+
+    function getNodeVolume(node: PwNode): real {
+        return node?.audio?.volume ?? 0;
+    }
+
+    function getNodeMuted(node: PwNode): bool {
+        return !!node?.audio?.muted;
+    }
+
     function getStreamName(stream: PwNode): string {
         if (!stream)
             return Tr.trCtx("Unknown", "unknown audio stream");

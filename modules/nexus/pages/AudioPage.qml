@@ -58,7 +58,9 @@ PageBase {
             iconName: "speaker"
             placeholderIcon: "speaker"
             placeholderText: Tr.trCtx("No output devices", "no audio outputs")
+            showVolume: true
             onSelected: node => Audio.setAudioSink(node)
+            onVolumeChanged: (node, vol) => Audio.setNodeVolume(node, vol)
         }
 
         // Input
@@ -86,7 +88,9 @@ PageBase {
             iconName: "mic"
             placeholderIcon: "mic_off"
             placeholderText: Tr.trCtx("No input devices", "no audio inputs")
+            showVolume: true
             onSelected: node => Audio.setAudioSource(node)
+            onVolumeChanged: (node, vol) => Audio.setNodeVolume(node, vol)
         }
 
         // Per-app volumes
