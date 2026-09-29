@@ -76,8 +76,14 @@ ShellRoot {
     property var _pipInit: PipManager
     property var _systemTrayInit: SystemTray
 
-    // Pre-warm Cpu/Memory/Storage services to avoid cold-start lag on first dashboard open
+    // Pre-warm services to avoid cold-start lag on dashboard open
     ServiceRef { service: Cpu }
     ServiceRef { service: Memory }
     ServiceRef { service: Storage }
+    ServiceRef { service: NetworkUsage }
+
+    // Deliberately not pre-warmed: Gpu polls nvidia-smi every interval while
+    // referenced, which keeps a hybrid dGPU out of D3 sleep, and Audio.cava /
+    // Audio.beatTracker would analyse audio continuously. Those still cold-start
+    // on the first dashboard open that uses them.
 }
