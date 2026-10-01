@@ -24,6 +24,9 @@ class Lyrics : public QObject {
     Q_PROPERTY(caelestia::config::LyricsBackend::Enum backend READ backend NOTIFY backendChanged)
     Q_PROPERTY(caelestia::config::LyricsBackend::Enum preferredBackend READ preferredBackend WRITE setPreferredBackend
             NOTIFY preferredBackendChanged)
+    Q_PROPERTY(bool romanized READ romanized WRITE setRomanized NOTIFY romanizedChanged)
+    Q_PROPERTY(bool showRomanized READ showRomanized WRITE setShowRomanized NOTIFY showRomanizedChanged)
+    Q_PROPERTY(bool hasRomanized READ hasRomanized NOTIFY hasRomanizedChanged)
     Q_PROPERTY(
         QList<caelestia::services::LyricCandidate> lyricCandidates READ lyricCandidates NOTIFY lyricCandidatesChanged)
     Q_PROPERTY(caelestia::services::LyricCandidate selectedCandidate READ selectedCandidate WRITE setSelectedCandidate
@@ -41,6 +44,11 @@ public:
     [[nodiscard]] LyricsBackend backend() const;
     [[nodiscard]] LyricsBackend preferredBackend() const;
     void setPreferredBackend(LyricsBackend value);
+    [[nodiscard]] bool romanized() const;
+    void setRomanized(bool value);
+    [[nodiscard]] bool showRomanized() const;
+    void setShowRomanized(bool value);
+    [[nodiscard]] bool hasRomanized() const;
     [[nodiscard]] QList<LyricCandidate> lyricCandidates() const;
     [[nodiscard]] LyricCandidate selectedCandidate() const;
     void setSelectedCandidate(const LyricCandidate& value);
@@ -63,6 +71,9 @@ signals:
     void lyricsChanged();
     void backendChanged();
     void preferredBackendChanged();
+    void romanizedChanged();
+    void showRomanizedChanged();
+    void hasRomanizedChanged();
     void lyricCandidatesChanged();
     void selectedCandidateChanged();
     void loadingChanged();
@@ -73,7 +84,9 @@ signals:
 private:
     void setBackend(LyricsBackend value);
     void setLoading(bool value);
-    void setLines(QVector<LyricLine> lines, LyricsBackend source);
+    void setLines(QVector<LyricLine> lines, LyricsBackend source, QVector<LyricLine> romanized = {});
+    void updateActiveLyrics();
+    [[nodiscard]] bool acceptRomanized(const QVector<LyricLine>& lines) const;
     void clearLines();
     void appendCandidates(const QList<LyricCandidate>& add);
     void clearCandidates();
@@ -98,6 +111,7 @@ private:
     void trackReply(int reqId, QNetworkReply* reply);
 
     void onPreferredBackendConfigChanged();
+    void onRomanizedConfigChanged();
     void onLyricsDirChanged();
 
     void loadLyricsMap();
@@ -112,8 +126,13 @@ private:
     [[nodiscard]] static const QString& stateDir();
     [[nodiscard]] static const QString& cacheDir();
     [[nodiscard]] static QString cachePathFor(LyricsBackend backend, const QString& id);
+    [[nodiscard]] static QString romanizedCachePathFor(LyricsBackend backend, const QString& id);
+    [[nodiscard]] static QString readTextFile(const QString& path);
+    static void writeTextFile(const QString& path, const QString& text);
     [[nodiscard]] static QString readCachedLrc(LyricsBackend backend, const QString& id);
     static void writeCachedLrc(LyricsBackend backend, const QString& id, const QString& text);
+    [[nodiscard]] static QString readCachedRomanizedLrc(LyricsBackend backend, const QString& id);
+    static void writeCachedRomanizedLrc(LyricsBackend backend, const QString& id, const QString& text);
 
     [[nodiscard]] static QVector<LyricLine> parseLrc(const QString& text);
     [[nodiscard]] static QString tryReadLocalLrc(const QString& dir, const QString& artist, const QString& title);
@@ -123,13 +142,20 @@ private:
     QTimer* m_loadDebounce;
 
     QVector<LyricLine> m_lines;
+    QVector<LyricLine> m_linesOriginal;
+    QVector<LyricLine> m_linesRomanized;
     QStringList m_lyrics;
+    QStringList m_lyricsOriginal;
+    QStringList m_lyricsRomanized;
     LyricsBackend m_backend = LyricsBackend::Auto;
     LyricsBackend m_preferredBackend = LyricsBackend::Auto;
     QList<LyricCandidate> m_candidates;
     LyricCandidate m_selected;
     bool m_loading = false;
     bool m_hasLyrics = false;
+    bool m_romanized = false;
+    bool m_showRomanized = false;
+    bool m_hasRomanized = false;
     qreal m_offset = 0.0;
 
     QString m_artist;

@@ -180,6 +180,25 @@ Item {
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: Tokens.spacing.extraSmall
+                    visible: Lyrics.hasRomanized
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: Lyrics.showRomanized ? Tr.tr("Variant: Romanized") : Tr.tr("Variant: Original")
+                        color: Colours.palette.m3onSurfaceVariant
+                        animate: true
+                    }
+
+                    IconButton {
+                        icon: "swap_horiz"
+                        type: IconButton.Text
+                        onClicked: Lyrics.showRomanized = !Lyrics.showRomanized
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Tokens.spacing.extraSmall
 
                     StyledText {
                         Layout.fillWidth: true

@@ -209,6 +209,10 @@ Item {
             root.forceUpdate();
         }
 
+        function onLyricsChanged() {
+            root.forceUpdate();
+        }
+
         target: Lyrics
     }
 

@@ -65,6 +65,40 @@ constexpr qreal k_indexFudge = 0.1;
     return haystack.contains(needle, Qt::CaseInsensitive);
 }
 
+[[nodiscard]] bool isLatinLetter(const char32_t u) {
+    return (u >= 0x41 && u <= 0x5A) || (u >= 0x61 && u <= 0x7A) || (u >= 0xC0 && u <= 0x24F)
+        || (u >= 0x1E00 && u <= 0x1EFF) || (u >= 0x2C60 && u <= 0x2C7F) || (u >= 0xA720 && u <= 0xA7FF)
+        || (u >= 0xFF21 && u <= 0xFF3A) || (u >= 0xFF41 && u <= 0xFF5A);
+}
+
+// True when the text contains only latin-script letters (punctuation/digits are ignored).
+[[nodiscard]] bool isLatinScript(const QString& text) {
+    for (const QChar c : text) {
+        if (c.isLetter() && !isLatinLetter(c.unicode())) {
+            return false;
+        }
+    }
+    return true;
+}
+
+[[nodiscard]] bool isLatinLrc(const QVector<LyricLine>& lines) {
+    for (const auto& l : lines) {
+        if (!isLatinScript(l.text)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+[[nodiscard]] QStringList toTextList(const QVector<LyricLine>& lines) {
+    QStringList list;
+    list.reserve(lines.size());
+    for (const auto& l : lines) {
+        list.append(l.text);
+    }
+    return list;
+}
+
 } // namespace
 
 Lyrics::Lyrics(QObject* parent)
@@ -80,9 +114,11 @@ Lyrics::Lyrics(QObject* parent)
     const auto* paths = cfg->paths();
 
     m_preferredBackend = svcCfg->lyricsBackend();
+    m_romanized = svcCfg->lyricsRomanized();
 
     QObject::connect(
         svcCfg, &config::ServiceConfig::lyricsBackendChanged, this, &Lyrics::onPreferredBackendConfigChanged);
+    QObject::connect(svcCfg, &config::ServiceConfig::lyricsRomanizedChanged, this, &Lyrics::onRomanizedConfigChanged);
     QObject::connect(paths, &config::UserPaths::lyricsDirChanged, this, &Lyrics::onLyricsDirChanged);
 
     loadLyricsMap();
@@ -110,6 +146,50 @@ void Lyrics::setPreferredBackend(LyricsBackend value) {
     config::ConfigSingleton::instance()->services()->set_lyricsBackend(value);
 
     scheduleLoad();
+}
+
+bool Lyrics::romanized() const {
+    return m_romanized;
+}
+
+void Lyrics::setRomanized(bool value) {
+    if (m_romanized == value) {
+        return;
+    }
+    m_romanized = value;
+    emit romanizedChanged();
+
+    config::ConfigSingleton::instance()->services()->set_lyricsRomanized(value);
+
+    updateActiveLyrics();
+    scheduleLoad();
+}
+
+bool Lyrics::showRomanized() const {
+    return m_showRomanized;
+}
+
+void Lyrics::setShowRomanized(bool value) {
+    if (m_showRomanized == value || !m_hasRomanized) {
+        return;
+    }
+    m_showRomanized = value;
+    emit showRomanizedChanged();
+
+    const QStringList active = value ? m_lyricsRomanized : m_lyricsOriginal;
+    if (active != m_lyrics) {
+        m_lyrics = active;
+    }
+    const bool hasLyrics = !m_lyrics.isEmpty();
+    if (hasLyrics != m_hasLyrics) {
+        m_hasLyrics = hasLyrics;
+        emit hasLyricsChanged();
+    }
+    emit lyricsChanged();
+}
+
+bool Lyrics::hasRomanized() const {
+    return m_hasRomanized;
 }
 
 QList<LyricCandidate> Lyrics::lyricCandidates() const {
@@ -143,12 +223,19 @@ void Lyrics::setSelectedCandidate(const LyricCandidate& value) {
         if (!cached.isEmpty()) {
             const auto lines = parseLrc(cached);
             if (!lines.isEmpty()) {
-                setLines(lines, b);
-                setLoading(false);
-                if (!m_settingFromPrefs) {
-                    persistTrackPrefs();
+                QVector<LyricLine> romanized;
+                if (m_romanized && b == LyricsBackend::NetEase) {
+                    romanized = parseLrc(readCachedRomanizedLrc(b, value.id()));
                 }
-                return;
+                if (!m_romanized || !romanized.isEmpty() || isLatinLrc(lines)) {
+                    setLines(lines, b, romanized);
+                    setLoading(false);
+                    if (!m_settingFromPrefs) {
+                        persistTrackPrefs();
+                    }
+                    return;
+                }
+                qCDebug(lcLyrics) << "romanized: cached" << b << "lyrics unusable, refetching id" << value.id();
             }
         }
     }
@@ -162,7 +249,12 @@ void Lyrics::setSelectedCandidate(const LyricCandidate& value) {
         QFile f(value.id());
         if (f.open(QIODevice::ReadOnly)) {
             const QString text = QString::fromUtf8(f.readAll());
-            setLines(parseLrc(text), LyricsBackend::Local);
+            const auto lines = parseLrc(text);
+            if (acceptRomanized(lines)) {
+                setLines(lines, LyricsBackend::Local);
+            } else {
+                qCDebug(lcLyrics) << "romanized: local candidate not latin-script" << value.id();
+            }
             setLoading(false);
         } else {
             qCWarning(lcLyrics) << "selectedCandidate: cannot open local file" << value.id();
@@ -282,33 +374,67 @@ void Lyrics::setLoading(bool value) {
     emit loadingChanged();
 }
 
-void Lyrics::setLines(QVector<LyricLine> lines, LyricsBackend source) {
-    std::ranges::sort(lines, [](const LyricLine& a, const LyricLine& b) {
+void Lyrics::setLines(QVector<LyricLine> lines, LyricsBackend source, QVector<LyricLine> romanized) {
+    const auto byTime = [](const LyricLine& a, const LyricLine& b) {
         return a.time < b.time;
-    });
+    };
+    std::ranges::sort(lines, byTime);
+    std::ranges::sort(romanized, byTime);
 
-    m_lines = std::move(lines);
-    QStringList list;
-    list.reserve(m_lines.size());
-    for (const auto& l : std::as_const(m_lines)) {
-        list.append(l.text);
-    }
-    m_lyrics = std::move(list);
+    m_linesOriginal = lines;
+    m_linesRomanized = romanized;
+    // Timed vector drives indexForTime; variants share timestamps, prefer the original
+    m_lines = !lines.isEmpty() ? std::move(lines) : std::move(romanized);
+    m_lyricsOriginal = toTextList(m_linesOriginal);
+    m_lyricsRomanized = toTextList(m_linesRomanized);
 
     setBackend(source);
-    emit lyricsChanged();
+    updateActiveLyrics();
+}
 
-    const auto hasLyrics = !m_lines.isEmpty();
+void Lyrics::updateActiveLyrics() {
+    const bool hasRomanized = m_romanized && !m_lyricsRomanized.isEmpty() && m_lyricsRomanized != m_lyricsOriginal;
+    if (hasRomanized != m_hasRomanized) {
+        m_hasRomanized = hasRomanized;
+        emit hasRomanizedChanged();
+    }
+
+    const bool show = m_romanized && m_hasRomanized;
+    if (show != m_showRomanized) {
+        m_showRomanized = show;
+        emit showRomanizedChanged();
+    }
+
+    const QStringList active = m_showRomanized ? m_lyricsRomanized : m_lyricsOriginal;
+    if (active != m_lyrics) {
+        m_lyrics = active;
+    }
+
+    const bool hasLyrics = !m_lyrics.isEmpty();
     if (hasLyrics != m_hasLyrics) {
         m_hasLyrics = hasLyrics;
         emit hasLyricsChanged();
     }
+    // lyricsChanged is also the NOTIFY for hasLyrics, always emit like setLines did before
+    emit lyricsChanged();
+}
+
+bool Lyrics::acceptRomanized(const QVector<LyricLine>& lines) const {
+    if (!m_romanized) {
+        return true;
+    }
+    // Local/LRCLIB have no romanized variants, only accept latin-script results
+    return isLatinLrc(lines);
 }
 
 void Lyrics::clearLines() {
     // Doesn't actually clear lines, set a flag instead so anims can run
     m_hasLyrics = false;
     emit hasLyricsChanged();
+    if (m_hasRomanized) {
+        m_hasRomanized = false;
+        emit hasRomanizedChanged();
+    }
 }
 
 void Lyrics::appendCandidates(const QList<LyricCandidate>& add) {
@@ -389,6 +515,13 @@ void Lyrics::doLoad() {
     }
     m_settingFromPrefs = false;
 
+    // Local/LRCLIB cannot provide romanized lyrics; fail fast when pinned to either
+    if (m_romanized && (m_preferredBackend == LyricsBackend::Local || m_preferredBackend == LyricsBackend::LRCLIB)) {
+        qCDebug(lcLyrics) << "romanized: backend" << m_preferredBackend << "cannot provide romanized lyrics";
+        setLoading(false);
+        return;
+    }
+
     // Always populate online candidates for the picker, regardless of preferred backend
     searchLrclibCandidates(reqId);
     searchNetEaseCandidates(reqId);
@@ -458,7 +591,7 @@ void Lyrics::tryLocal(int reqId) {
         if (f.open(QIODevice::ReadOnly)) {
             const QString text = QString::fromUtf8(f.readAll());
             const auto lines = parseLrc(text);
-            if (!lines.isEmpty()) {
+            if (!lines.isEmpty() && acceptRomanized(lines)) {
                 setLines(lines, LyricsBackend::Local);
                 appendCandidates(
                     { LyricCandidate(LyricsBackend::Local, direct, m_title, m_artist, m_album, m_duration) });
@@ -479,7 +612,7 @@ void Lyrics::tryLocal(int reqId) {
         if (f.open(QIODevice::ReadOnly)) {
             const QString text = QString::fromUtf8(f.readAll());
             const auto lines = parseLrc(text);
-            if (!lines.isEmpty()) {
+            if (!lines.isEmpty() && acceptRomanized(lines)) {
                 setLines(lines, LyricsBackend::Local);
                 appendCandidates(
                     { LyricCandidate(LyricsBackend::Local, recursive, m_title, m_artist, m_album, m_duration) });
@@ -545,6 +678,11 @@ void Lyrics::tryLrclib(int reqId) {
 
         const auto lines = parseLrc(synced);
         if (lines.isEmpty()) {
+            chainNext(LyricsBackend::LRCLIB, reqId);
+            return;
+        }
+        if (!acceptRomanized(lines)) {
+            qCDebug(lcLyrics) << "romanized: lrclib lyrics not latin-script, skipping";
             chainNext(LyricsBackend::LRCLIB, reqId);
             return;
         }
@@ -726,8 +864,14 @@ void Lyrics::fetchLrclibById(const QString& id, int reqId) {
             setLoading(false);
             return;
         }
+        const auto lines = parseLrc(synced);
+        if (!acceptRomanized(lines)) {
+            qCDebug(lcLyrics) << "romanized: lrclib lyrics not latin-script for id" << id;
+            setLoading(false);
+            return;
+        }
         writeCachedLrc(LyricsBackend::LRCLIB, id, synced);
-        setLines(parseLrc(synced), LyricsBackend::LRCLIB);
+        setLines(lines, LyricsBackend::LRCLIB);
         setLoading(false);
     });
 }
@@ -755,14 +899,32 @@ void Lyrics::fetchNetEaseLyricsById(const QString& id, int reqId) {
             return;
         }
         const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
-        const QString lrc = doc.object().value(u"lrc"_s).toObject().value(u"lyric"_s).toString();
+        const QJsonObject obj = doc.object();
+        const QString lrc = obj.value(u"lrc"_s).toObject().value(u"lyric"_s).toString();
         if (lrc.isEmpty()) {
             qCDebug(lcLyrics) << "netease /lyric: empty for id" << id;
             setLoading(false);
             return;
         }
+        // Same response carries the romanized variant; cache it whenever present
+        const QString romalrc = obj.value(u"romalrc"_s).toObject().value(u"lyric"_s).toString();
+
+        auto original = parseLrc(lrc);
+        QVector<LyricLine> romanized;
+        if (m_romanized) {
+            romanized = parseLrc(romalrc);
+            if (romanized.isEmpty() && !isLatinLrc(original)) {
+                qCDebug(lcLyrics) << "netease /lyric: no romalrc and lrc not latin-script for id" << id;
+                setLoading(false);
+                return;
+            }
+        }
+
         writeCachedLrc(LyricsBackend::NetEase, id, lrc);
-        setLines(parseLrc(lrc), LyricsBackend::NetEase);
+        if (!romalrc.isEmpty()) {
+            writeCachedRomanizedLrc(LyricsBackend::NetEase, id, romalrc);
+        }
+        setLines(std::move(original), LyricsBackend::NetEase, std::move(romanized));
         setLoading(false);
     });
 }
@@ -787,6 +949,17 @@ void Lyrics::onPreferredBackendConfigChanged() {
     }
     m_preferredBackend = desired;
     emit preferredBackendChanged();
+    scheduleLoad();
+}
+
+void Lyrics::onRomanizedConfigChanged() {
+    const bool desired = config::ConfigSingleton::instance()->services()->lyricsRomanized();
+    if (desired == m_romanized) {
+        return;
+    }
+    m_romanized = desired;
+    emit romanizedChanged();
+    updateActiveLyrics();
     scheduleLoad();
 }
 
@@ -931,8 +1104,18 @@ QString Lyrics::cachePathFor(LyricsBackend backend, const QString& id) {
     return u"%1/%2/%3.lrc"_s.arg(cacheDir(), backendKey(backend), sanitizeFilenamePart(id));
 }
 
-QString Lyrics::readCachedLrc(LyricsBackend backend, const QString& id) {
+QString Lyrics::romanizedCachePathFor(LyricsBackend backend, const QString& id) {
     const QString path = cachePathFor(backend, id);
+    if (path.isEmpty() || !path.endsWith(u".lrc"_s)) {
+        return {};
+    }
+    QString out = path;
+    out.chop(4);
+    out += u".romalrc"_s;
+    return out;
+}
+
+QString Lyrics::readTextFile(const QString& path) {
     if (path.isEmpty()) {
         return {};
     }
@@ -943,12 +1126,8 @@ QString Lyrics::readCachedLrc(LyricsBackend backend, const QString& id) {
     return QString::fromUtf8(f.readAll());
 }
 
-void Lyrics::writeCachedLrc(LyricsBackend backend, const QString& id, const QString& text) {
-    if (text.isEmpty()) {
-        return;
-    }
-    const QString path = cachePathFor(backend, id);
-    if (path.isEmpty()) {
+void Lyrics::writeTextFile(const QString& path, const QString& text) {
+    if (path.isEmpty() || text.isEmpty()) {
         return;
     }
     QDir().mkpath(QFileInfo(path).absolutePath());
@@ -967,6 +1146,22 @@ void Lyrics::writeCachedLrc(LyricsBackend backend, const QString& id, const QStr
     if (!out.commit()) {
         qCWarning(lcLyrics) << "commit failed for" << path << ":" << out.errorString();
     }
+}
+
+QString Lyrics::readCachedLrc(LyricsBackend backend, const QString& id) {
+    return readTextFile(cachePathFor(backend, id));
+}
+
+void Lyrics::writeCachedLrc(LyricsBackend backend, const QString& id, const QString& text) {
+    writeTextFile(cachePathFor(backend, id), text);
+}
+
+QString Lyrics::readCachedRomanizedLrc(LyricsBackend backend, const QString& id) {
+    return readTextFile(romanizedCachePathFor(backend, id));
+}
+
+void Lyrics::writeCachedRomanizedLrc(LyricsBackend backend, const QString& id, const QString& text) {
+    writeTextFile(romanizedCachePathFor(backend, id), text);
 }
 
 QString Lyrics::tryReadLocalLrc(const QString& dir, const QString& artist, const QString& title) {

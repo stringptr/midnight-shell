@@ -134,6 +134,13 @@ PageBase {
             onSelected: item => Lyrics.preferredBackend = root.lyricsItems.indexOf(item)
         }
 
+        ToggleRow {
+            text: Tr.tr("Romanized lyrics")
+            subtext: Tr.tr("Prefer latin/romanized variants when the source provides them")
+            checked: Lyrics.romanized
+            onToggled: Lyrics.romanized = checked
+        }
+
         SelectRow {
             last: true
             label: Tr.tr("Default player")

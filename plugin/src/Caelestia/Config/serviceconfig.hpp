@@ -44,6 +44,8 @@ class ServiceConfig : public settings::ObjectNode {
             vmap({ { u"from"_s, u"com.github.th_ch.youtube_music"_s }, { u"to"_s, u"YT Music"_s } }),
         }))
     CONFIG_GLOBAL_ENUM_PROPERTY(LyricsBackend, lyricsBackend, LyricsBackend::Auto)
+    // Prefer latin/romanized lyrics (NetEase romalrc) when available
+    CONFIG_GLOBAL_PROPERTY(bool, lyricsRomanized, false)
     // Bluetooth auto-reconnect
     CONFIG_GLOBAL_PROPERTY(QStringList, bluetoothAutoReconnectDevices, {})
     // Discord ARPC settings
