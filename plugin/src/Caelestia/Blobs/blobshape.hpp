@@ -80,6 +80,8 @@ protected:
     float m_cachedPaddedW = 0;
     float m_cachedPaddedH = 0;
     QRectF m_localPaddedRect;
+    // Last rect written to the scene graph node; skips redundant DirtyGeometry marks
+    QRectF m_lastPaintRect;
     QVector<BlobRectData> m_cachedRects;
     int m_cachedMyIndex = -2;
     float m_pendingDx = 0;

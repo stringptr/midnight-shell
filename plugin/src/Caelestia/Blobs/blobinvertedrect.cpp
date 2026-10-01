@@ -67,8 +67,10 @@ QSGNode* BlobInvertedRect::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData
     const float holeBot = static_cast<float>(height() - m_borderBottom) - inset;
 
     // If the hole is too small or invalid, fall back to full quad
-    if (holeLeft >= holeRight || holeTop >= holeBot)
+    if (holeLeft >= holeRight || holeTop >= holeBot) {
+        m_lastPaintRect = QRectF(); // The fallback always rewrites the quad
         return BlobShape::updatePaintNode(oldNode, nullptr);
+    }
 
     auto* node = static_cast<QSGGeometryNode*>(oldNode);
 
@@ -100,42 +102,67 @@ QSGNode* BlobInvertedRect::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData
     const float w = x1 - x0;
     const float h = y1 - y0;
 
-    // Update vertex positions and texture coordinates
-    auto* v = node->geometry()->vertexDataAsTexturedPoint2D();
+    // Update vertex positions and texture coordinates only when they changed
+    const bool geoChanged = needsRebuild || m_lastPaintOuter != m_localPaddedRect || m_lastPaintHole[0] != holeLeft
+        || m_lastPaintHole[1] != holeTop || m_lastPaintHole[2] != holeRight || m_lastPaintHole[3] != holeBot;
 
-    // Outer corners
-    v[0].set(x0, y0, 0.0f, 0.0f);
-    v[1].set(x1, y0, 1.0f, 0.0f);
-    v[2].set(x1, y1, 1.0f, 1.0f);
-    v[3].set(x0, y1, 0.0f, 1.0f);
-    // Inner corners (hole)
-    v[4].set(holeLeft, holeTop, (holeLeft - x0) / w, (holeTop - y0) / h);
-    v[5].set(holeRight, holeTop, (holeRight - x0) / w, (holeTop - y0) / h);
-    v[6].set(holeRight, holeBot, (holeRight - x0) / w, (holeBot - y0) / h);
-    v[7].set(holeLeft, holeBot, (holeLeft - x0) / w, (holeBot - y0) / h);
+    if (geoChanged) {
+        auto* v = node->geometry()->vertexDataAsTexturedPoint2D();
 
-    node->markDirty(QSGNode::DirtyGeometry);
+        // Outer corners
+        v[0].set(x0, y0, 0.0f, 0.0f);
+        v[1].set(x1, y0, 1.0f, 0.0f);
+        v[2].set(x1, y1, 1.0f, 1.0f);
+        v[3].set(x0, y1, 0.0f, 1.0f);
+        // Inner corners (hole)
+        v[4].set(holeLeft, holeTop, (holeLeft - x0) / w, (holeTop - y0) / h);
+        v[5].set(holeRight, holeTop, (holeRight - x0) / w, (holeTop - y0) / h);
+        v[6].set(holeRight, holeBot, (holeRight - x0) / w, (holeBot - y0) / h);
+        v[7].set(holeLeft, holeBot, (holeLeft - x0) / w, (holeBot - y0) / h);
 
-    // Update material uniforms
+        m_lastPaintOuter = m_localPaddedRect;
+        m_lastPaintHole[0] = holeLeft;
+        m_lastPaintHole[1] = holeTop;
+        m_lastPaintHole[2] = holeRight;
+        m_lastPaintHole[3] = holeBot;
+        node->markDirty(QSGNode::DirtyGeometry);
+    }
+
+    // Update material uniforms only when they actually changed
     auto* material = static_cast<BlobMaterial*>(node->material());
-    material->m_paddedX = m_cachedPaddedX;
-    material->m_paddedY = m_cachedPaddedY;
-    material->m_paddedW = m_cachedPaddedW;
-    material->m_paddedH = m_cachedPaddedH;
-    material->m_smoothFactor = pad;
-    material->m_myIndex = m_cachedMyIndex;
-    material->m_color = m_group->color();
-    material->m_hasInverted = m_cachedHasInverted ? 1 : 0;
-    material->m_invertedRadius = m_cachedInvertedRadius;
-    memcpy(material->m_invertedOuter, m_cachedInvertedOuter, sizeof(m_cachedInvertedOuter));
-    memcpy(material->m_invertedInner, m_cachedInvertedInner, sizeof(m_cachedInvertedInner));
+    bool materialChanged = needsRebuild;
+    const auto sync = [&materialChanged, material](auto& dst, const auto& src) {
+        if (dst == src)
+            return;
+        dst = src;
+        materialChanged = true;
+    };
+    const auto syncArr = [&materialChanged, material](auto& dst, const auto& src) {
+        if (memcmp(&dst, &src, sizeof(src)) == 0)
+            return;
+        memcpy(&dst, &src, sizeof(src));
+        materialChanged = true;
+    };
+
+    sync(material->m_paddedX, m_cachedPaddedX);
+    sync(material->m_paddedY, m_cachedPaddedY);
+    sync(material->m_paddedW, m_cachedPaddedW);
+    sync(material->m_paddedH, m_cachedPaddedH);
+    sync(material->m_smoothFactor, pad);
+    sync(material->m_myIndex, m_cachedMyIndex);
+    sync(material->m_color, m_group->color());
+    sync(material->m_hasInverted, m_cachedHasInverted ? 1 : 0);
+    sync(material->m_invertedRadius, m_cachedInvertedRadius);
+    syncArr(material->m_invertedOuter, m_cachedInvertedOuter);
+    syncArr(material->m_invertedInner, m_cachedInvertedInner);
 
     const int count = static_cast<int>(m_cachedRects.size());
-    material->m_rectCount = count;
+    sync(material->m_rectCount, count);
     for (int i = 0; i < count; ++i)
-        material->m_rects[i] = m_cachedRects[i];
+        sync(material->m_rects[i], m_cachedRects[i]);
 
-    node->markDirty(QSGNode::DirtyMaterial);
+    if (materialChanged)
+        node->markDirty(QSGNode::DirtyMaterial);
 
     return node;
 }

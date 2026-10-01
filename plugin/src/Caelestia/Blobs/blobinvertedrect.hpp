@@ -49,6 +49,11 @@ private:
     qreal m_borderRight = 0;
     qreal m_borderTop = 0;
     qreal m_borderBottom = 0;
+
+    // Last outer/hole bounds written to the scene graph node; skips redundant
+    // DirtyGeometry/DirtyMaterial marks when nothing moved
+    QRectF m_lastPaintOuter;
+    float m_lastPaintHole[4] = {};
 };
 
 } // namespace caelestia::blobs

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 
 #include "blobgroup.hpp"
 #include "blobinvertedrect.hpp"
@@ -85,6 +86,8 @@ void BlobShape::setGroup(BlobGroup* g) {
     emit groupChanged();
     if (m_group)
         m_group->markDirty();
+    else
+        update(); // Tear down the scene graph node now that nothing will mark this item dirty
 }
 
 qreal BlobShape::radius() const {
@@ -456,42 +459,60 @@ QSGNode* BlobShape::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
         node->setFlag(QSGNode::OwnsMaterial);
     }
 
-    // Update geometry
-    auto* geometry = node->geometry();
-    auto* v = geometry->vertexDataAsTexturedPoint2D();
+    // Update geometry only when the padded bounds actually moved
+    if (!oldNode || m_lastPaintRect != m_localPaddedRect) {
+        auto* geometry = node->geometry();
+        auto* v = geometry->vertexDataAsTexturedPoint2D();
 
-    const auto x0 = static_cast<float>(m_localPaddedRect.x());
-    const auto y0 = static_cast<float>(m_localPaddedRect.y());
-    const float x1 = x0 + static_cast<float>(m_localPaddedRect.width());
-    const float y1 = y0 + static_cast<float>(m_localPaddedRect.height());
+        const auto x0 = static_cast<float>(m_localPaddedRect.x());
+        const auto y0 = static_cast<float>(m_localPaddedRect.y());
+        const float x1 = x0 + static_cast<float>(m_localPaddedRect.width());
+        const float y1 = y0 + static_cast<float>(m_localPaddedRect.height());
 
-    v[0].set(x0, y0, 0.0f, 0.0f);
-    v[1].set(x1, y0, 1.0f, 0.0f);
-    v[2].set(x0, y1, 0.0f, 1.0f);
-    v[3].set(x1, y1, 1.0f, 1.0f);
+        v[0].set(x0, y0, 0.0f, 0.0f);
+        v[1].set(x1, y0, 1.0f, 0.0f);
+        v[2].set(x0, y1, 0.0f, 1.0f);
+        v[3].set(x1, y1, 1.0f, 1.0f);
 
-    node->markDirty(QSGNode::DirtyGeometry);
+        m_lastPaintRect = m_localPaddedRect;
+        node->markDirty(QSGNode::DirtyGeometry);
+    }
 
-    // Update material
+    // Update material only when the uniforms actually changed
     auto* material = static_cast<BlobMaterial*>(node->material());
-    material->m_paddedX = m_cachedPaddedX;
-    material->m_paddedY = m_cachedPaddedY;
-    material->m_paddedW = m_cachedPaddedW;
-    material->m_paddedH = m_cachedPaddedH;
-    material->m_smoothFactor = static_cast<float>(m_group->smoothing());
-    material->m_myIndex = m_cachedMyIndex;
-    material->m_color = m_group->color();
-    material->m_hasInverted = m_cachedHasInverted ? 1 : 0;
-    material->m_invertedRadius = m_cachedInvertedRadius;
-    memcpy(material->m_invertedOuter, m_cachedInvertedOuter, sizeof(m_cachedInvertedOuter));
-    memcpy(material->m_invertedInner, m_cachedInvertedInner, sizeof(m_cachedInvertedInner));
+    bool materialChanged = !oldNode;
+    const auto sync = [&materialChanged, material](auto& dst, const auto& src) {
+        if (dst == src)
+            return;
+        dst = src;
+        materialChanged = true;
+    };
+    const auto syncArr = [&materialChanged, material](auto& dst, const auto& src) {
+        if (memcmp(&dst, &src, sizeof(src)) == 0)
+            return;
+        memcpy(&dst, &src, sizeof(src));
+        materialChanged = true;
+    };
+
+    sync(material->m_paddedX, m_cachedPaddedX);
+    sync(material->m_paddedY, m_cachedPaddedY);
+    sync(material->m_paddedW, m_cachedPaddedW);
+    sync(material->m_paddedH, m_cachedPaddedH);
+    sync(material->m_smoothFactor, static_cast<float>(m_group->smoothing()));
+    sync(material->m_myIndex, m_cachedMyIndex);
+    sync(material->m_color, m_group->color());
+    sync(material->m_hasInverted, m_cachedHasInverted ? 1 : 0);
+    sync(material->m_invertedRadius, m_cachedInvertedRadius);
+    syncArr(material->m_invertedOuter, m_cachedInvertedOuter);
+    syncArr(material->m_invertedInner, m_cachedInvertedInner);
 
     const int count = static_cast<int>(m_cachedRects.size());
-    material->m_rectCount = count;
+    sync(material->m_rectCount, count);
     for (int i = 0; i < count; ++i)
-        material->m_rects[i] = m_cachedRects[i];
+        sync(material->m_rects[i], m_cachedRects[i]);
 
-    node->markDirty(QSGNode::DirtyMaterial);
+    if (materialChanged)
+        node->markDirty(QSGNode::DirtyMaterial);
 
     return node;
 }

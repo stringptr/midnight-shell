@@ -211,7 +211,7 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
 >
 > <details><summary>Ignored options</summary>
 >
-> - `appearance` (`anim`, `transparency`)
+> - `appearance` (`anim`, `transparency`, `islands`, `pitchBlack`, `shadow`, `effects`)
 > - `general` (`logo`, `apps`, `idle`, `battery`)
 > - `bar.workspaces` (`perMonitorWorkspaces`, `specialWorkspaceIcons`, `windowIcons`, `wsIcons`)
 > - `bar.tray` (`iconSubs`, `hiddenIcons`)
@@ -273,6 +273,10 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
             }
         },
         "deformScale": 1,
+        "effects": {
+            "classicBackgrounds": false,
+            "classicBackgroundsOnBattery": false
+        },
         "font": {
             "body": {
                 "family": "GoogleSansFlex",

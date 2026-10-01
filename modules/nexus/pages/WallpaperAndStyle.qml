@@ -371,13 +371,46 @@ PageBase {
         SliderRow {
             Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
             Layout.fillWidth: true
-            label: qsTr("Layer transparency level")
+            label: Tr.tr("Layer transparency level")
             value: Colours.transparency.layers
             valueLabel: Math.round(value * 100) + "%"
             onMoved: v => GlobalConfig.appearance.transparency.layers = v
             enabled: Colours.transparency.enabled
         }
 
+        SliderRow {
+            Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
+            Layout.fillWidth: true
+            label: Tr.tr("Deformation amount")
+            valueLabel: Math.round(value * 100) + "%"
+            from: 0
+            to: 2
+            value: root.targetConfig.appearance.deformScale
+            onMoved: v => {
+                root.targetConfig.appearance.deformScale = v;
+                root.targetConfig.save();
+            }
+        }
+
+        ToggleRow {
+            Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
+            Layout.fillWidth: true
+            text: Tr.tr("Drop shadows")
+            checked: GlobalConfig.appearance.shadow.enabled
+            onToggled: GlobalConfig.appearance.shadow.enabled = checked
+        }
+
+        SliderRow {
+            Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
+            Layout.fillWidth: true
+            label: Tr.tr("Shadow blur")
+            valueLabel: Math.round(value) + "px"
+            from: 0
+            to: 40
+            value: GlobalConfig.appearance.shadow.blurMax
+            enabled: GlobalConfig.appearance.shadow.enabled
+            onMoved: v => GlobalConfig.appearance.shadow.blurMax = v
+        }
 
         ToggleRow {
             Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstring>
+
 #include <qcolor.h>
 #include <qsgmaterial.h>
 #include <qsgmaterialshader.h>
@@ -24,6 +26,14 @@ struct BlobRectData {
     int excludeMask = 0;
 };
 
+inline bool operator==(const BlobRectData& a, const BlobRectData& b) {
+    return a.cx == b.cx && a.cy == b.cy && a.hw == b.hw && a.hh == b.hh && a.offsetX == b.offsetX
+        && a.offsetY == b.offsetY && a.minEig == b.minEig
+        && std::memcmp(a.invDeform, b.invDeform, sizeof(a.invDeform)) == 0 && a.screenHalfX == b.screenHalfX
+        && a.screenHalfY == b.screenHalfY && std::memcmp(a.radius, b.radius, sizeof(a.radius)) == 0
+        && a.excludeMask == b.excludeMask;
+}
+
 class BlobMaterial : public QSGMaterial {
 public:
     [[nodiscard]] QSGMaterialType* type() const override;
@@ -43,6 +53,9 @@ public:
     float m_invertedOuter[4] = {};
     float m_invertedInner[4] = {};
     BlobRectData m_rects[k_maxRects] = {};
+    // False until the first uniform upload; the persistent uniform buffer may hold
+    // undefined bytes before that, so every field must be written at least once.
+    bool m_uniformsPrimed = false;
 };
 
 class BlobMaterialShader : public QSGMaterialShader {
