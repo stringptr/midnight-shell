@@ -378,6 +378,15 @@ PageBase {
             enabled: Colours.transparency.enabled
         }
 
+        ToggleRow {
+            Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
+            Layout.fillWidth: true
+            text: Tr.tr("Blur behind shell panels")
+            subtext: Tr.tr("Frosted glass behind the bar, border and drawers. Needs transparency and Niri 26.04+.")
+            checked: GlobalConfig.appearance.blur.enabled
+            onToggled: GlobalConfig.appearance.blur.enabled = checked
+        }
+
         SliderRow {
             Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
             Layout.fillWidth: true

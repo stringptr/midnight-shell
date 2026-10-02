@@ -30,7 +30,9 @@ Singleton {
     readonly property alias wallLuminance: analyser.luminance
 
     // TODO: Niri uses static layer-rule KDL blocks, not dynamic Hyprland rule injection.
-    // Compositor blur is configured in assets/niri/caelestia.kdl.
+    // Compositor blur: the static layer rule lives in assets/niri/caelestia.kdl, and
+    // runtime on/off is GlobalConfig.appearance.blur.enabled, gated by
+    // modules/drawers/ContentWindow.qml (shellBlurActive).
     // QML palette transparency (M3TPalette) is independent and still works.
     function reloadHyprRules(): void {
     }

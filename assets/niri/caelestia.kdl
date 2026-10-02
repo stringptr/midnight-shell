@@ -10,3 +10,21 @@ layer-rule {
 
 // Niri does not support per-layer animation control.
 // Layer surfaces have no open/close animations by default.
+
+// Shell panel blur. modules/drawers/ContentWindow.qml publishes the per-panel
+// footprint via BackgroundEffect.blurRegion, which niri requests through
+// ext-background-effect-v1 (niri >= 26.04).
+//
+// NEVER add `blur true` here: that would frost the whole fullscreen
+// `caelestia-drawers` surface, i.e. the desktop and every window behind it.
+// Omitting `blur` leaves the client region in charge; xray is auto-enabled by
+// niri whenever an effect is active, while noise/saturation pin a neutral look
+// even if a global `blur {}` block tunes them.
+layer-rule {
+    match namespace="^caelestia-drawers$"
+    background-effect {
+        xray true
+        noise 0
+        saturation 1
+    }
+}

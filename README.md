@@ -211,7 +211,7 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
 >
 > <details><summary>Ignored options</summary>
 >
-> - `appearance` (`anim`, `transparency`, `islands`, `pitchBlack`, `shadow`, `effects`)
+> - `appearance` (`anim`, `transparency`, `islands`, `pitchBlack`, `shadow`, `blur`)
 > - `general` (`logo`, `apps`, `idle`, `battery`)
 > - `bar.workspaces` (`perMonitorWorkspaces`, `specialWorkspaceIcons`, `windowIcons`, `wsIcons`)
 > - `bar.tray` (`iconSubs`, `hiddenIcons`)
@@ -226,7 +226,7 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
 > - `utilities.vpn` (`enabled`, `provider`)
 > - `services` (`weatherLocation`, `useFahrenheit`, `useFahrenheitPerformance`, `useTwelveHourClock`,
 >   `gpuType`, `visualiserBars`, `audioIncrement`, `brightnessIncrement`, `maxVolume`, `smartScheme`,
->   `defaultPlayer`, `playerAliases`, `lyricsBackend`)
+>   `defaultPlayer`, `playerAliases`, `lyricsBackend`, `lyricsRomanized`)
 > - `paths` (`wallpaperDir`, `lyricsDir`)
 >
 > </details>
@@ -272,11 +272,10 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
                 "scale": 1
             }
         },
-        "deformScale": 1,
-        "effects": {
-            "classicBackgrounds": false,
-            "classicBackgroundsOnBattery": false
+        "blur": {
+            "enabled": false
         },
+        "deformScale": 1,
         "font": {
             "body": {
                 "family": "GoogleSansFlex",
@@ -1067,6 +1066,7 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
         "defaultPlayer": "Spotify",
         "gpuType": "",
         "lyricsBackend": "Auto",
+        "lyricsRomanized": false,
         "maxVolume": 1,
         "playerAliases": [
             {
@@ -1203,6 +1203,41 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
 ```
 
 </details>
+
+### Shell blur (compositor)
+
+Frosted glass behind the bar, the screen border and every drawer panel is done by
+the compositor, not by the shell: `modules/drawers/ContentWindow.qml` publishes the
+footprint of each panel as a `BackgroundEffect.blurRegion`, and Niri frosts exactly
+those rectangles through the `ext-background-effect-v1` protocol. Enable it under
+**Nexus → Wallpaper & style → Blur behind shell panels** (or set
+`appearance.blur.enabled`), alongside **Transparency** — an opaque shell surface has
+nothing to blur.
+
+Requirements:
+
+- **Niri 26.04 or newer.** Older Niri builds do not know the protocol, so the toggle
+  silently does nothing.
+- Blur must not be switched off globally in your Niri config — a top-level
+  `blur { off }` block disables every background effect.
+- Include the shipped layer rule (`assets/niri/caelestia.kdl`) from your Niri
+  config so the shell's blur stays neutral even if you tune the global `blur {}`
+  block. If you maintain your own layer rules instead, mirror it:
+
+  ```kdl
+  layer-rule {
+      match namespace="^caelestia-drawers$"
+      background-effect {
+          xray true
+          noise 0
+          saturation 1
+      }
+  }
+  ```
+
+  The rule must **never** set `blur true` on `caelestia-drawers`: that is a
+  fullscreen surface, so it would frost the whole desktop and every window behind
+  it. Omitting `blur` leaves the per-panel region in charge.
 
 ### Advanced configuration
 

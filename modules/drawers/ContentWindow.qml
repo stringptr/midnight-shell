@@ -39,6 +39,22 @@ StyledWindow {
 
     property color surfaceColour: Colours.tPalette.m3surface
 
+    // Compositor blur behind the shell chrome (niri ext-background-effect).
+    // Only active while the shell surface is actually translucent.
+    readonly property bool shellBlurActive: GlobalConfig.appearance.blur.enabled
+        && !GlobalConfig.appearance.pitchBlack
+        && root.surfaceColour.a < 1.0
+
+    // BlobInvertedRect draws the screen frame: its inner edge sits
+    // `borderThickness` from each screen edge, or `bar.implicitWidth/Height` on
+    // the bar's side. Four strips frost that ring exactly, with no halo.
+    readonly property bool blurFrameEnabled: !GlobalConfig.appearance.islands
+    readonly property real blurFrameThickness: blurFrameEnabled ? Math.max(0, root.borderThickness - root.sdfBorderOffset) : 0
+    readonly property real blurFrameLeft: blurFrameEnabled && Config.bar.position === "left" ? Math.max(0, bar.implicitWidth - root.sdfBorderOffset) : blurFrameThickness
+    readonly property real blurFrameRight: blurFrameEnabled && Config.bar.position === "right" ? Math.max(0, bar.implicitWidth - root.sdfBorderOffset) : blurFrameThickness
+    readonly property real blurFrameTop: blurFrameEnabled && Config.bar.position === "top" ? Math.max(0, bar.implicitHeight - root.sdfBorderOffset) : blurFrameThickness
+    readonly property real blurFrameBottom: blurFrameEnabled && Config.bar.position === "bottom" ? Math.max(0, bar.implicitHeight - root.sdfBorderOffset) : blurFrameThickness
+
     readonly property int dragMaskPadding: {
         if (focusGrab.active || panels.popouts.isDetached)
             return 0;
@@ -68,6 +84,8 @@ StyledWindow {
     WlrLayershell.keyboardFocus: screenState.launcher || screenState.session || screenState.dashboard || screenState.sidebar || panels.popouts.hasCurrent ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     mask: hasFullscreen ? emptyRegion : regions
+
+    BackgroundEffect.blurRegion: shellBlurActive ? blurRegionRef : null
 
     anchors.top: true
     anchors.bottom: true
@@ -104,6 +122,135 @@ StyledWindow {
         bar: bar
         panels: panels
         win: root
+    }
+
+    Region {
+        id: blurRegionRef
+
+        // Keep a non-empty offscreen region: Quickshell sends
+        // set_blur_region(nullptr) for an empty QRegion, and Niri then falls back
+        // to blurring the whole surface geometry, which in xray mode erases every
+        // window behind the shell.
+        Region {
+            x: -100
+            y: -100
+            width: 1
+            height: 1
+        }
+
+        // Screen border frame (BlobInvertedRect), four strips. Their union is the
+        // ring; only the rounded inner corners are a sub-pixel mismatch.
+        Region {
+            x: 0
+            y: 0
+            width: root.width
+            height: root.blurFrameTop
+        }
+
+        Region {
+            x: 0
+            y: root.height - root.blurFrameBottom
+            width: root.width
+            height: root.blurFrameBottom
+        }
+
+        Region {
+            x: 0
+            y: 0
+            width: root.blurFrameLeft
+            height: root.height
+        }
+
+        Region {
+            x: root.width - root.blurFrameRight
+            y: 0
+            width: root.blurFrameRight
+            height: root.height
+        }
+
+        // Islands mode: the frame is hidden and the bar is a floating blob instead.
+        Region {
+            x: bar.x
+            y: bar.y
+            width: GlobalConfig.appearance.islands && bar.visible ? bar.width : 0
+            height: GlobalConfig.appearance.islands && bar.visible ? bar.height : 0
+            radius: Tokens.rounding.extraLarge
+        }
+
+        // One region per PanelBg blob, at the same coordinates as the drawn
+        // chrome. Collapsed to zero while the panel is hidden: a boolean gate, so
+        // animated geometry never churns out set_blur_region per frame.
+        Region {
+            x: dashBg.x
+            y: dashBg.y
+            width: dashBg.visible ? dashBg.width : 0
+            height: dashBg.visible ? dashBg.height : 0
+            radius: dashBg.radius
+        }
+
+        Region {
+            x: launcherBg.x
+            y: launcherBg.y
+            width: launcherBg.visible ? launcherBg.width : 0
+            height: launcherBg.visible ? launcherBg.height : 0
+            radius: launcherBg.radius
+        }
+
+        Region {
+            x: sessionBg.x
+            y: sessionBg.y
+            width: sessionBg.visible ? sessionBg.width : 0
+            height: sessionBg.visible ? sessionBg.height : 0
+            radius: sessionBg.radius
+        }
+
+        Region {
+            x: sidebarBg.x
+            y: sidebarBg.y
+            width: sidebarBg.visible ? sidebarBg.width : 0
+            height: sidebarBg.visible ? sidebarBg.height : 0
+            radius: sidebarBg.radius
+        }
+
+        Region {
+            x: osdBg.x
+            y: osdBg.y
+            width: osdBg.visible ? osdBg.width : 0
+            height: osdBg.visible ? osdBg.height : 0
+            radius: osdBg.radius
+        }
+
+        Region {
+            x: workspaceOverviewBg.x
+            y: workspaceOverviewBg.y
+            width: workspaceOverviewBg.visible ? workspaceOverviewBg.width : 0
+            height: workspaceOverviewBg.visible ? workspaceOverviewBg.height : 0
+            radius: workspaceOverviewBg.radius
+        }
+
+        Region {
+            x: notifsBg.x
+            y: notifsBg.y
+            width: notifsBg.visible ? notifsBg.width : 0
+            height: notifsBg.visible ? notifsBg.height : 0
+            radius: notifsBg.radius
+        }
+
+        Region {
+            x: utilsBg.x
+            y: utilsBg.y
+            width: utilsBg.visible ? utilsBg.width : 0
+            height: utilsBg.visible ? utilsBg.height : 0
+            radius: utilsBg.radius
+        }
+
+        Region {
+            x: popoutBg.x
+            y: popoutBg.y
+            width: popoutBg.visible ? popoutBg.width : 0
+            height: popoutBg.visible ? popoutBg.height : 0
+            radius: popoutBg.radius
+        }
     }
 
     // TODO: Niri has no HyprlandFocusGrab equivalent; using plain Item

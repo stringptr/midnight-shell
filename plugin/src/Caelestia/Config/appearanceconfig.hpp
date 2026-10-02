@@ -280,6 +280,12 @@ class AppearanceShadow : public settings::ObjectNode {
     CONFIG_GLOBAL_PROPERTY(qreal, blurMax, 15)
 };
 
+class AppearanceBlur : public settings::ObjectNode {
+    CONFIG_NODE(AppearanceBlur, settings::ObjectNode)
+
+    CONFIG_GLOBAL_PROPERTY(bool, enabled, false)
+};
+
 class AppearanceConfig : public settings::ObjectNode {
     CONFIG_NODE(AppearanceConfig, settings::ObjectNode)
 
@@ -291,6 +297,7 @@ class AppearanceConfig : public settings::ObjectNode {
     CONFIG_SUBOBJECT(AppearanceAnim, anim)
     CONFIG_SUBOBJECT(AppearanceTransparency, transparency)
     CONFIG_SUBOBJECT(AppearanceShadow, shadow)
+    CONFIG_SUBOBJECT(AppearanceBlur, blur)
     CONFIG_GLOBAL_PROPERTY(bool, pitchBlack, false)
     CONFIG_GLOBAL_PROPERTY(bool, islands, false)
 };
