@@ -45,8 +45,18 @@ Item {
 
     property real offsetScale: shouldBeActive ? 0 : 1
 
+    // The expressive bezier overshoots offsetScale past 0, and this ~1000px
+    // slide would retreat the panel past blob.frag's bridge reach
+    // (2-sqrt2)*smoothing, tearing the junction band for a frame. Soft-clamp
+    // the retreat so the overshoot stays under the reach: C1 at m = t,
+    // asymptote 2t = 0.8 * reach.
+    function smoothRetreat(m) {
+        const t = 0.4 * (2 - Math.SQRT2) * Config.border.smoothing;
+        return m <= t ? m : 2 * t - t * t / m;
+    }
+
     visible: offsetScale < 1
-    anchors.topMargin: (-implicitHeight - 5) * offsetScale
+    anchors.topMargin: smoothRetreat((-implicitHeight - 5) * offsetScale)
     implicitHeight: content.implicitHeight
     implicitWidth: content.implicitWidth || 854 // Hard coded fallback for first open
     opacity: 1 - offsetScale

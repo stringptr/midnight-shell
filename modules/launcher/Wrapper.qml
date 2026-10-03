@@ -24,6 +24,15 @@ Item {
 
     property real offsetScale: shouldBeActive ? 0 : 1
 
+    // Expressive overshoot past flush would retreat this panel past
+    // blob.frag's bridge reach (2-sqrt2)*smoothing and tear the junction band.
+    // Soft-clamp the retreat (C1 at m = t, asymptote 2t = 0.8 * reach); the
+    // bar-bottom height overshoot keeps its junction edge pinned and skips it.
+    function smoothRetreat(m) {
+        const t = 0.4 * (2 - Math.SQRT2) * Config.border.smoothing;
+        return m <= t ? m : 2 * t - t * t / m;
+    }
+
     onShouldBeActiveChanged: {
         if (shouldBeActive)
             implicitHeight = Qt.binding(() => content.implicitHeight);
@@ -33,7 +42,7 @@ Item {
 
     clip: Config.bar.position === "bottom"
     visible: offsetScale < 1
-    anchors.bottomMargin: (Config.bar.position === "bottom" ? 0 : -implicitHeight - 5) * offsetScale
+    anchors.bottomMargin: smoothRetreat((Config.bar.position === "bottom" ? 0 : -implicitHeight - 5) * offsetScale)
     height: Config.bar.position === "bottom" ? implicitHeight * (1 - offsetScale) : implicitHeight
     implicitHeight: content.implicitHeight
     implicitWidth: content.implicitWidth || 630 // Hard coded fallback for first open

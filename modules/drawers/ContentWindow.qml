@@ -47,13 +47,21 @@ StyledWindow {
 
     // BlobInvertedRect draws the screen frame: its inner edge sits
     // `borderThickness` from each screen edge, or `bar.implicitWidth/Height` on
-    // the bar's side. Four strips frost that ring exactly, with no halo.
+    // the bar's side. Four strips frost the straight ring; the rounded inner
+    // corners and the smin junction fillets get their own patches below.
     readonly property bool blurFrameEnabled: !GlobalConfig.appearance.islands
     readonly property real blurFrameThickness: blurFrameEnabled ? Math.max(0, root.borderThickness - root.sdfBorderOffset) : 0
     readonly property real blurFrameLeft: blurFrameEnabled && Config.bar.position === "left" ? Math.max(0, bar.implicitWidth - root.sdfBorderOffset) : blurFrameThickness
     readonly property real blurFrameRight: blurFrameEnabled && Config.bar.position === "right" ? Math.max(0, bar.implicitWidth - root.sdfBorderOffset) : blurFrameThickness
     readonly property real blurFrameTop: blurFrameEnabled && Config.bar.position === "top" ? Math.max(0, bar.implicitHeight - root.sdfBorderOffset) : blurFrameThickness
     readonly property real blurFrameBottom: blurFrameEnabled && Config.bar.position === "bottom" ? Math.max(0, bar.implicitHeight - root.sdfBorderOffset) : blurFrameThickness
+    // How far off the frame inner edge a panel edge can drift while blob.frag's
+    // smin still bridges the gap with chrome: (2 - sqrt2) * smoothing.
+    readonly property real blurBridgeReach: (2 - Math.SQRT2) * root.Config.border.smoothing
+    // blob.frag's border-sink onset (preOff): past this penetration the inner
+    // wall recedes, so junction patches must not anchor on it (keeps popouts,
+    // which sit inside the border, inert as tested).
+    readonly property real blurSinkMargin: root.Config.border.smoothing * (2 - Math.SQRT2) * 0.5
 
     readonly property int dragMaskPadding: {
         if (focusGrab.active || panels.popouts.isDetached)
@@ -69,6 +77,47 @@ StyledWindow {
             if (contentItem.Config[panel].enabled)
                 thresholds.push(contentItem.Config[panel].dragThreshold);
         return Math.max(...thresholds);
+    }
+
+    // Mirrors BlobShape::accumulateInvertedFill (blobshape.cpp): how much of a
+    // blob's corner radius survives the frame's inner edge. A corner flush with
+    // the edge gets factor 0 (the drawn chrome squares it off to k_minR = 2),
+    // a corner `smoothing` away keeps its full radius; islands mode has no
+    // frame, so the factor is 1.
+    function frameFillFactor(x, y) {
+        if (!blurFrameEnabled)
+            return 1;
+        const k = root.Config.border.smoothing;
+        const d = Math.min(x - blurFrameLeft, (width - blurFrameRight) - x, y - blurFrameTop, (height - blurFrameBottom) - y);
+        const t = Math.max(0, Math.min(1, d / k));
+        return t * t * (3 - 2 * t);
+    }
+
+    // Mirrors BlobRect::cornerRadii plus applyCornerFill's inverted fill: the
+    // blur region must round where the drawn chrome rounds, otherwise the
+    // squared-off corner lens stays unblurred. Rounding may drop below the
+    // drawn k_minR = 2 — those sub-pixel lens pixels are always smin-filled by
+    // the adjacent frame, so covering them keeps the region inside the chrome.
+    function blurCornerRadius(bg, cx, cy, explicitRadius) {
+        const maxR = Math.min(bg.width, bg.height) / 2;
+        const base = Math.min(explicitRadius >= 0 ? explicitRadius : bg.radius, maxR);
+        return Math.round(base * frameFillFactor(cx, cy));
+    }
+
+    // The drawn fillet reaches past a panel edge that stops short of the wall:
+    // where the edge's perpendicular extent `ext` shrinks below smoothing, the
+    // circular smin's corner case still fills rows out to
+    //   eps(ext) = k + (ext - sqrt(max(2k^2 - ext^2, 0))) / 2,
+    // clamped to [0, k] (eps(0) = preOff, eps(k) = k). Junction patches must
+    // collapse with that depth instead of min(k, ext), which shortens ahead of
+    // the chrome and leaves the drawn bulge uncovered in the tail.
+    function blurJunctionExtent(ext) {
+        const k = root.Config.border.smoothing;
+        if (ext >= k)
+            return k;
+        if (ext <= -k)
+            return 0;
+        return Math.max(0, Math.min(k, k + (ext - Math.sqrt(Math.max(2 * k * k - ext * ext, 0))) / 2));
     }
 
     onHasFullscreenChanged: {
@@ -138,8 +187,9 @@ StyledWindow {
             height: 1
         }
 
-        // Screen border frame (BlobInvertedRect), four strips. Their union is the
-        // ring; only the rounded inner corners are a sub-pixel mismatch.
+        // Screen border frame (BlobInvertedRect): four strips frost the straight
+        // ring, four wedges frost the rounded inner corners (corner square minus
+        // the hole's corner disc) — together they match the drawn frame exactly.
         Region {
             x: 0
             y: 0
@@ -168,6 +218,34 @@ StyledWindow {
             height: root.height
         }
 
+        FrameWedge {
+            cx: root.blurFrameLeft
+            cy: root.blurFrameTop
+            dx: 1
+            dy: 1
+        }
+
+        FrameWedge {
+            cx: root.width - root.blurFrameRight
+            cy: root.blurFrameTop
+            dx: -1
+            dy: 1
+        }
+
+        FrameWedge {
+            cx: root.blurFrameLeft
+            cy: root.height - root.blurFrameBottom
+            dx: 1
+            dy: -1
+        }
+
+        FrameWedge {
+            cx: root.width - root.blurFrameRight
+            cy: root.height - root.blurFrameBottom
+            dx: -1
+            dy: -1
+        }
+
         // Islands mode: the frame is hidden and the bar is a floating blob instead.
         Region {
             x: bar.x
@@ -178,14 +256,19 @@ StyledWindow {
         }
 
         // One region per PanelBg blob, at the same coordinates as the drawn
-        // chrome. Collapsed to zero while the panel is hidden: a boolean gate, so
-        // animated geometry never churns out set_blur_region per frame.
+        // chrome, with the drawn per-corner radii (flush corners square off via
+        // frameFillFactor). Collapsed to zero while the panel is hidden:
+        // a boolean gate, so animated geometry never churns out set_blur_region
+        // per frame.
         Region {
             x: dashBg.x
             y: dashBg.y
             width: dashBg.visible ? dashBg.width : 0
             height: dashBg.visible ? dashBg.height : 0
-            radius: dashBg.radius
+            topLeftRadius: root.blurCornerRadius(dashBg, dashBg.x, dashBg.y, dashBg.topLeftRadius)
+            topRightRadius: root.blurCornerRadius(dashBg, dashBg.x + dashBg.width, dashBg.y, dashBg.topRightRadius)
+            bottomLeftRadius: root.blurCornerRadius(dashBg, dashBg.x, dashBg.y + dashBg.height, dashBg.bottomLeftRadius)
+            bottomRightRadius: root.blurCornerRadius(dashBg, dashBg.x + dashBg.width, dashBg.y + dashBg.height, dashBg.bottomRightRadius)
         }
 
         Region {
@@ -193,7 +276,10 @@ StyledWindow {
             y: launcherBg.y
             width: launcherBg.visible ? launcherBg.width : 0
             height: launcherBg.visible ? launcherBg.height : 0
-            radius: launcherBg.radius
+            topLeftRadius: root.blurCornerRadius(launcherBg, launcherBg.x, launcherBg.y, launcherBg.topLeftRadius)
+            topRightRadius: root.blurCornerRadius(launcherBg, launcherBg.x + launcherBg.width, launcherBg.y, launcherBg.topRightRadius)
+            bottomLeftRadius: root.blurCornerRadius(launcherBg, launcherBg.x, launcherBg.y + launcherBg.height, launcherBg.bottomLeftRadius)
+            bottomRightRadius: root.blurCornerRadius(launcherBg, launcherBg.x + launcherBg.width, launcherBg.y + launcherBg.height, launcherBg.bottomRightRadius)
         }
 
         Region {
@@ -201,7 +287,10 @@ StyledWindow {
             y: sessionBg.y
             width: sessionBg.visible ? sessionBg.width : 0
             height: sessionBg.visible ? sessionBg.height : 0
-            radius: sessionBg.radius
+            topLeftRadius: root.blurCornerRadius(sessionBg, sessionBg.x, sessionBg.y, sessionBg.topLeftRadius)
+            topRightRadius: root.blurCornerRadius(sessionBg, sessionBg.x + sessionBg.width, sessionBg.y, sessionBg.topRightRadius)
+            bottomLeftRadius: root.blurCornerRadius(sessionBg, sessionBg.x, sessionBg.y + sessionBg.height, sessionBg.bottomLeftRadius)
+            bottomRightRadius: root.blurCornerRadius(sessionBg, sessionBg.x + sessionBg.width, sessionBg.y + sessionBg.height, sessionBg.bottomRightRadius)
         }
 
         Region {
@@ -209,7 +298,10 @@ StyledWindow {
             y: sidebarBg.y
             width: sidebarBg.visible ? sidebarBg.width : 0
             height: sidebarBg.visible ? sidebarBg.height : 0
-            radius: sidebarBg.radius
+            topLeftRadius: root.blurCornerRadius(sidebarBg, sidebarBg.x, sidebarBg.y, sidebarBg.topLeftRadius)
+            topRightRadius: root.blurCornerRadius(sidebarBg, sidebarBg.x + sidebarBg.width, sidebarBg.y, sidebarBg.topRightRadius)
+            bottomLeftRadius: root.blurCornerRadius(sidebarBg, sidebarBg.x, sidebarBg.y + sidebarBg.height, sidebarBg.bottomLeftRadius)
+            bottomRightRadius: root.blurCornerRadius(sidebarBg, sidebarBg.x + sidebarBg.width, sidebarBg.y + sidebarBg.height, sidebarBg.bottomRightRadius)
         }
 
         Region {
@@ -217,7 +309,10 @@ StyledWindow {
             y: osdBg.y
             width: osdBg.visible ? osdBg.width : 0
             height: osdBg.visible ? osdBg.height : 0
-            radius: osdBg.radius
+            topLeftRadius: root.blurCornerRadius(osdBg, osdBg.x, osdBg.y, osdBg.topLeftRadius)
+            topRightRadius: root.blurCornerRadius(osdBg, osdBg.x + osdBg.width, osdBg.y, osdBg.topRightRadius)
+            bottomLeftRadius: root.blurCornerRadius(osdBg, osdBg.x, osdBg.y + osdBg.height, osdBg.bottomLeftRadius)
+            bottomRightRadius: root.blurCornerRadius(osdBg, osdBg.x + osdBg.width, osdBg.y + osdBg.height, osdBg.bottomRightRadius)
         }
 
         Region {
@@ -225,7 +320,10 @@ StyledWindow {
             y: workspaceOverviewBg.y
             width: workspaceOverviewBg.visible ? workspaceOverviewBg.width : 0
             height: workspaceOverviewBg.visible ? workspaceOverviewBg.height : 0
-            radius: workspaceOverviewBg.radius
+            topLeftRadius: root.blurCornerRadius(workspaceOverviewBg, workspaceOverviewBg.x, workspaceOverviewBg.y, workspaceOverviewBg.topLeftRadius)
+            topRightRadius: root.blurCornerRadius(workspaceOverviewBg, workspaceOverviewBg.x + workspaceOverviewBg.width, workspaceOverviewBg.y, workspaceOverviewBg.topRightRadius)
+            bottomLeftRadius: root.blurCornerRadius(workspaceOverviewBg, workspaceOverviewBg.x, workspaceOverviewBg.y + workspaceOverviewBg.height, workspaceOverviewBg.bottomLeftRadius)
+            bottomRightRadius: root.blurCornerRadius(workspaceOverviewBg, workspaceOverviewBg.x + workspaceOverviewBg.width, workspaceOverviewBg.y + workspaceOverviewBg.height, workspaceOverviewBg.bottomRightRadius)
         }
 
         Region {
@@ -233,7 +331,10 @@ StyledWindow {
             y: notifsBg.y
             width: notifsBg.visible ? notifsBg.width : 0
             height: notifsBg.visible ? notifsBg.height : 0
-            radius: notifsBg.radius
+            topLeftRadius: root.blurCornerRadius(notifsBg, notifsBg.x, notifsBg.y, notifsBg.topLeftRadius)
+            topRightRadius: root.blurCornerRadius(notifsBg, notifsBg.x + notifsBg.width, notifsBg.y, notifsBg.topRightRadius)
+            bottomLeftRadius: root.blurCornerRadius(notifsBg, notifsBg.x, notifsBg.y + notifsBg.height, notifsBg.bottomLeftRadius)
+            bottomRightRadius: root.blurCornerRadius(notifsBg, notifsBg.x + notifsBg.width, notifsBg.y + notifsBg.height, notifsBg.bottomRightRadius)
         }
 
         Region {
@@ -241,7 +342,10 @@ StyledWindow {
             y: utilsBg.y
             width: utilsBg.visible ? utilsBg.width : 0
             height: utilsBg.visible ? utilsBg.height : 0
-            radius: utilsBg.radius
+            topLeftRadius: root.blurCornerRadius(utilsBg, utilsBg.x, utilsBg.y, utilsBg.topLeftRadius)
+            topRightRadius: root.blurCornerRadius(utilsBg, utilsBg.x + utilsBg.width, utilsBg.y, utilsBg.topRightRadius)
+            bottomLeftRadius: root.blurCornerRadius(utilsBg, utilsBg.x, utilsBg.y + utilsBg.height, utilsBg.bottomLeftRadius)
+            bottomRightRadius: root.blurCornerRadius(utilsBg, utilsBg.x + utilsBg.width, utilsBg.y + utilsBg.height, utilsBg.bottomRightRadius)
         }
 
         Region {
@@ -249,7 +353,90 @@ StyledWindow {
             y: popoutBg.y
             width: popoutBg.visible ? popoutBg.width : 0
             height: popoutBg.visible ? popoutBg.height : 0
-            radius: popoutBg.radius
+            topLeftRadius: root.blurCornerRadius(popoutBg, popoutBg.x, popoutBg.y, popoutBg.topLeftRadius)
+            topRightRadius: root.blurCornerRadius(popoutBg, popoutBg.x + popoutBg.width, popoutBg.y, popoutBg.topRightRadius)
+            bottomLeftRadius: root.blurCornerRadius(popoutBg, popoutBg.x, popoutBg.y + popoutBg.height, popoutBg.bottomLeftRadius)
+            bottomRightRadius: root.blurCornerRadius(popoutBg, popoutBg.x + popoutBg.width, popoutBg.y + popoutBg.height, popoutBg.bottomRightRadius)
+        }
+
+        // Cove fillets where panel corners sit on the frame's inner edge (the
+        // circular smin in blob.frag fills the empty quadrant beside them).
+        // Stays active through the animation overshoot, up to bridge reach.
+        PanelCoves {
+            bg: dashBg
+        }
+
+        PanelCoves {
+            bg: launcherBg
+        }
+
+        PanelCoves {
+            bg: sessionBg
+        }
+
+        PanelCoves {
+            bg: sidebarBg
+        }
+
+        PanelCoves {
+            bg: osdBg
+        }
+
+        PanelCoves {
+            bg: workspaceOverviewBg
+        }
+
+        PanelCoves {
+            bg: notifsBg
+        }
+
+        PanelCoves {
+            bg: utilsBg
+        }
+
+        PanelCoves {
+            bg: popoutBg
+        }
+
+        // Transient bridge strips: while the panel animation overshoots and a
+        // panel edge drifts off the frame inner edge by 0 < gap < smoothing,
+        // the shader still fills the gap (one full band up to bridge reach, two
+        // fillet bands beyond it). Full band minus a carved middle, which
+        // degenerates to nothing below reach.
+        PanelBridges {
+            bg: dashBg
+        }
+
+        PanelBridges {
+            bg: launcherBg
+        }
+
+        PanelBridges {
+            bg: sessionBg
+        }
+
+        PanelBridges {
+            bg: sidebarBg
+        }
+
+        PanelBridges {
+            bg: osdBg
+        }
+
+        PanelBridges {
+            bg: workspaceOverviewBg
+        }
+
+        PanelBridges {
+            bg: notifsBg
+        }
+
+        PanelBridges {
+            bg: utilsBg
+        }
+
+        PanelBridges {
+            bg: popoutBg
         }
     }
 
@@ -671,5 +858,277 @@ StyledWindow {
         implicitHeight: panel.height
         radius: Tokens.rounding.extraLarge
         deformScale: (deformAmount * Config.appearance.deformScale) / 10000
+    }
+
+    component FrameWedge: Region {
+        // Covers one rounded inner corner of the frame's hole: the corner square
+        // (side borderRounding) minus the hole's corner disc of the same radius,
+        // centred on the square's interior far corner. Matches the drawn arc
+        // pixel for pixel; the strips already cover everything outside the square.
+        property real cx
+        property real cy
+        property real dx
+        property real dy
+        readonly property int r: Math.round(root.borderRounding)
+        readonly property bool active: root.blurFrameEnabled && r > 0
+
+        x: dx > 0 ? cx : cx - r
+        y: dy > 0 ? cy : cy - r
+        width: active ? r : 0
+        height: active ? r : 0
+
+        Region {
+            shape: RegionShape.Ellipse
+            x: dx > 0 ? cx : cx - 2 * r
+            y: dy > 0 ? cy : cy - 2 * r
+            width: active ? 2 * r : 0
+            height: active ? 2 * r : 0
+            intersection: Intersection.Subtract
+        }
+    }
+
+    component FrameCove: Region {
+        // The circular-smin cove blob.frag draws where a panel meets the frame's
+        // inner edge: quarter-square minus quarter-disc of side `smoothing` in
+        // the empty quadrant at the junction corner. Exact by construction —
+        // material iff (k-a)^2+(k-b)^2 > k^2 within [0,k]^2. The junction axis
+        // is anchored at the frame edge (not the panel corner) so the patch
+        // tracks the shader's fillet while the panel drifts during overshoot.
+        // The square is clipped to the panel's extent across the junction: a
+        // shrinking panel collapses its cove with the geometry instead of
+        // popping a full k x k when `visible` flips, and a translating panel's
+        // cove stays up while its edge still crosses the wall. Once blob.frag's
+        // opposite-edge sink (preOff) recedes the wall the anchor sits on, the
+        // patch mutes with it.
+        required property Item panel
+        property real cx
+        property real cy
+        property int hx
+        property int hy
+        property bool active
+        readonly property int k: Math.round(root.Config.border.smoothing)
+        // A wall counts as a junction for this corner only when the corner sits
+        // within reach of it AND either the corner is past the wall (gap <= 0)
+        // or the panel does not extend across the whole gap toward it. A panel
+        // that spans the wall (e.g. a nearly-exited utility panel whose bottom
+        // edge crosses the bottom wall) fills the gap with its own body — no
+        // fillet is drawn there, so the patch must not anchor or count it.
+        readonly property bool onTop: gapOn(cy - root.blurFrameTop, panel.y <= root.blurFrameTop)
+        readonly property bool onBottom: gapOn((root.height - root.blurFrameBottom) - cy, panel.y + panel.height >= root.height - root.blurFrameBottom)
+        readonly property bool onLeft: gapOn(cx - root.blurFrameLeft, panel.x <= root.blurFrameLeft)
+        readonly property bool onRight: gapOn((root.width - root.blurFrameRight) - cx, panel.x + panel.width >= root.width - root.blurFrameRight)
+        // The clipped side keeps the square anchored at the wall it grows out
+        // of, so the patch extends wall-outward exactly like the drawn fillet
+        // (anchoring at the far k-edge instead would grow inward from mid-hole
+        // — the patch slides toward the wall, backwards against the chrome).
+        readonly property real sqX: onLeft ? root.blurFrameLeft : (onRight ? (root.width - root.blurFrameRight) - clipW : (hx > 0 ? cx : cx - k))
+        readonly property real sqY: onTop ? root.blurFrameTop : (onBottom ? (root.height - root.blurFrameBottom) - clipH : (hy > 0 ? cy : cy - k))
+        // blob.frag sinks a wall once the rect's opposite edge passes it by
+        // preOff (blurSinkMargin); the anchor on that wall is gone then.
+        readonly property bool sunk: (onTop && panel.y + panel.height < root.blurFrameTop - root.blurSinkMargin)
+            || (onBottom && panel.y > (root.height - root.blurFrameBottom) + root.blurSinkMargin)
+            || (onLeft && panel.x + panel.width < root.blurFrameLeft - root.blurSinkMargin)
+            || (onRight && panel.x > (root.width - root.blurFrameRight) + root.blurSinkMargin)
+        // Perpendicular extent of the panel at the junction: the square's side
+        // across the wall tracks how far the panel still reaches — as the
+        // shader's smin corner-case fill does, so the patch collapses with the
+        // chrome instead of shortening ahead of it (see blurJunctionExtent);
+        // the along-edge side stays k.
+        readonly property real clipW: onLeft ? root.blurJunctionExtent(panel.x + panel.width - root.blurFrameLeft) : (onRight ? root.blurJunctionExtent((root.width - root.blurFrameRight) - panel.x) : k)
+        readonly property real clipH: onTop ? root.blurJunctionExtent(panel.y + panel.height - root.blurFrameTop) : (onBottom ? root.blurJunctionExtent((root.height - root.blurFrameBottom) - panel.y) : k)
+        readonly property bool live: active && !sunk
+
+        function gapOn(gap, span) {
+            return gap <= root.blurBridgeReach && (gap <= 0 || !span);
+        }
+
+        x: sqX
+        y: sqY
+        width: live ? clipW : 0
+        height: live ? clipH : 0
+
+        Region {
+            shape: RegionShape.Ellipse
+            x: hx > 0 ? sqX : sqX - k
+            y: hy > 0 ? sqY : sqY - k
+            width: live ? 2 * k : 0
+            height: live ? 2 * k : 0
+            intersection: Intersection.Subtract
+        }
+    }
+
+    component PanelCoves: Region {
+        // Up to four FrameCoves for one panel's corners: one fires per corner
+        // that sits on exactly one frame inner edge (corners on two edges lie
+        // under the strips/wedge already, corners on none have no cove). The
+        // quadrant points out of the panel and into the hole. Side proximity
+        // has no lower bound here — deep penetration is handled per-cove by
+        // FrameCove's sink mute and perpendicular-extent clip. An edge within
+        // reach does not count when the panel body itself spans the whole gap
+        // toward that wall: no fillet is drawn there, and counting it would
+        // flip n to 1 (or 2) at the wrong corner — a nearly-exited utility
+        // panel would lose its live cove while its drawn fillet persists.
+        required property Item bg
+
+        function edgeOn(gap, span) {
+            return gap <= root.blurBridgeReach && (gap <= 0 || !span);
+        }
+
+        function coveActive(cx, cy) {
+            if (!root.blurFrameEnabled || !bg.visible)
+                return false;
+            const n = (edgeOn(cy - root.blurFrameTop, bg.y <= root.blurFrameTop) ? 1 : 0) + (edgeOn((root.height - root.blurFrameBottom) - cy, bg.y + bg.height >= root.height - root.blurFrameBottom) ? 1 : 0) + (edgeOn(cx - root.blurFrameLeft, bg.x <= root.blurFrameLeft) ? 1 : 0) + (edgeOn((root.width - root.blurFrameRight) - cx, bg.x + bg.width >= root.width - root.blurFrameRight) ? 1 : 0);
+            return n === 1;
+        }
+
+        function coveHx(cx, isLeft) {
+            if (edgeOn(cx - root.blurFrameLeft, bg.x <= root.blurFrameLeft))
+                return 1;
+            if (edgeOn((root.width - root.blurFrameRight) - cx, bg.x + bg.width >= root.width - root.blurFrameRight))
+                return -1;
+            return isLeft ? -1 : 1;
+        }
+
+        function coveHy(cy, isTop) {
+            if (edgeOn(cy - root.blurFrameTop, bg.y <= root.blurFrameTop))
+                return 1;
+            if (edgeOn((root.height - root.blurFrameBottom) - cy, bg.y + bg.height >= root.height - root.blurFrameBottom))
+                return -1;
+            return isTop ? -1 : 1;
+        }
+
+        FrameCove {
+            panel: bg
+            cx: bg.x
+            cy: bg.y
+            hx: coveHx(cx, true)
+            hy: coveHy(cy, true)
+            active: coveActive(cx, cy)
+        }
+
+        FrameCove {
+            panel: bg
+            cx: bg.x + bg.width
+            cy: bg.y
+            hx: coveHx(cx, false)
+            hy: coveHy(cy, true)
+            active: coveActive(cx, cy)
+        }
+
+        FrameCove {
+            panel: bg
+            cx: bg.x
+            cy: bg.y + bg.height
+            hx: coveHx(cx, true)
+            hy: coveHy(cy, false)
+            active: coveActive(cx, cy)
+        }
+
+        FrameCove {
+            panel: bg
+            cx: bg.x + bg.width
+            cy: bg.y + bg.height
+            hx: coveHx(cx, false)
+            hy: coveHy(cy, false)
+            active: coveActive(cx, cy)
+        }
+    }
+
+    component PanelBridges: Region {
+        // Transient bridge strips on the four frame-adjacent sides. blob.frag's
+        // smin keeps filling the gap between a drifting panel edge and the
+        // frame inner edge up to (2-sqrt2)*smoothing (one full band), and as
+        // two fillet bands of depth d up to smoothing beyond that, with
+        //   d = (g - sqrt(max(g^2 - 2(k-g)^2, 0))) / 2.
+        // The strip is the full band minus a carved-out middle: below reach the
+        // middle degenerates to height 0, above it only the fillets remain.
+        // Band corners at the panel end reuse the drawn per-corner radii so the
+        // strip lines up with the panel region; frame-end corners are square.
+        required property Item bg
+
+        readonly property int k: Math.round(root.Config.border.smoothing)
+        readonly property real gapTop: bg.y - root.blurFrameTop
+        readonly property real gapBottom: (root.height - root.blurFrameBottom) - (bg.y + bg.height)
+        readonly property real gapLeft: bg.x - root.blurFrameLeft
+        readonly property real gapRight: (root.width - root.blurFrameRight) - (bg.x + bg.width)
+
+        function bandOn(gap) {
+            return root.blurFrameEnabled && bg.visible && gap > 0 && gap < k;
+        }
+
+        function carve(gap) {
+            if (gap <= 0)
+                return 0;
+            const kg = k - gap;
+            return (gap - Math.sqrt(Math.max(gap * gap - 2 * kg * kg, 0))) / 2;
+        }
+
+        Region {
+            x: bg.x
+            y: root.blurFrameTop
+            width: bandOn(gapTop) ? bg.width : 0
+            height: bandOn(gapTop) ? gapTop : 0
+            bottomLeftRadius: root.blurCornerRadius(bg, bg.x, bg.y, bg.topLeftRadius)
+            bottomRightRadius: root.blurCornerRadius(bg, bg.x + bg.width, bg.y, bg.topRightRadius)
+
+            Region {
+                x: bg.x
+                y: root.blurFrameTop + carve(gapTop)
+                width: parent.width
+                height: Math.max(0, gapTop - 2 * carve(gapTop))
+                intersection: Intersection.Subtract
+            }
+        }
+
+        Region {
+            x: bg.x
+            y: root.height - root.blurFrameBottom
+            width: bandOn(gapBottom) ? bg.width : 0
+            height: bandOn(gapBottom) ? gapBottom : 0
+            topLeftRadius: root.blurCornerRadius(bg, bg.x, bg.y + bg.height, bg.bottomLeftRadius)
+            topRightRadius: root.blurCornerRadius(bg, bg.x + bg.width, bg.y + bg.height, bg.bottomRightRadius)
+
+            Region {
+                x: bg.x
+                y: root.height - root.blurFrameBottom - carve(gapBottom)
+                width: parent.width
+                height: Math.max(0, gapBottom - 2 * carve(gapBottom))
+                intersection: Intersection.Subtract
+            }
+        }
+
+        Region {
+            x: root.blurFrameLeft
+            y: bg.y
+            width: bandOn(gapLeft) ? gapLeft : 0
+            height: bandOn(gapLeft) ? bg.height : 0
+            topRightRadius: root.blurCornerRadius(bg, bg.x, bg.y, bg.topLeftRadius)
+            bottomRightRadius: root.blurCornerRadius(bg, bg.x, bg.y + bg.height, bg.bottomLeftRadius)
+
+            Region {
+                x: root.blurFrameLeft + carve(gapLeft)
+                y: bg.y
+                width: Math.max(0, gapLeft - 2 * carve(gapLeft))
+                height: parent.height
+                intersection: Intersection.Subtract
+            }
+        }
+
+        Region {
+            x: root.width - root.blurFrameRight
+            y: bg.y
+            width: bandOn(gapRight) ? gapRight : 0
+            height: bandOn(gapRight) ? bg.height : 0
+            topLeftRadius: root.blurCornerRadius(bg, bg.x + bg.width, bg.y, bg.topRightRadius)
+            bottomLeftRadius: root.blurCornerRadius(bg, bg.x + bg.width, bg.y + bg.height, bg.bottomRightRadius)
+
+            Region {
+                x: root.width - root.blurFrameRight - carve(gapRight)
+                y: bg.y
+                width: Math.max(0, gapRight - 2 * carve(gapRight))
+                height: parent.height
+                intersection: Intersection.Subtract
+            }
+        }
     }
 }
