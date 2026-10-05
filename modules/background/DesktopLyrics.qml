@@ -37,6 +37,7 @@ Item {
     readonly property bool hasTiled: false
 
     readonly property bool shouldHide: (autoHideFullscreen && hasFullscreen) || (autoHideTiled && hasTiled)
+    readonly property bool appFilterActive: Players.appFilterPasses(Config.background.desktopLyrics.appFilter, Config.background.desktopLyrics.filteredApps, Players.active)
 
     property bool hasLyrics: Lyrics.hasLyrics
     property int currentLyricIndex: -1
@@ -110,7 +111,7 @@ Item {
     implicitWidth: 350 * root.lyricsScale
     implicitHeight: 180 * root.lyricsScale
 
-    opacity: (((root.hasLyrics && root.hasText) || Lyrics.loading) && !root.shouldHide) ? 1 : 0
+    opacity: (((root.hasLyrics && root.hasText) || Lyrics.loading) && !root.shouldHide && root.appFilterActive) ? 1 : 0
     visible: opacity > 0
 
     Behavior on opacity {

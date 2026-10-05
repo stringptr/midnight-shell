@@ -93,6 +93,63 @@ PageBase {
         }
 
         SectionHeader {
+            text: qsTr("App filter")
+        }
+
+        SelectRow {
+            first: true
+            Layout.fillWidth: true
+            label: qsTr("Filter mode")
+            subtext: qsTr("Only show lyrics for specific apps")
+            configNode: root.targetConfig.background.desktopLyrics
+            propertyName: "appFilter"
+            menuItems: [
+                MenuItem { text: qsTr("Disabled") },
+                MenuItem { text: qsTr("Whitelist") },
+                MenuItem { text: qsTr("Blacklist") }
+            ]
+            active: {
+                switch (root.targetConfig.background.desktopLyrics.appFilter) {
+                case AppFilter.Whitelist: return menuItems[1];
+                case AppFilter.Blacklist: return menuItems[2];
+                default: return menuItems[0];
+                }
+            }
+            onSelected: item => {
+                if (item === menuItems[1])
+                    root.targetConfig.background.desktopLyrics.appFilter = AppFilter.Whitelist;
+                else if (item === menuItems[2])
+                    root.targetConfig.background.desktopLyrics.appFilter = AppFilter.Blacklist;
+                else
+                    root.targetConfig.background.desktopLyrics.appFilter = AppFilter.Disabled;
+                root.targetConfig.save();
+            }
+            enabled: root.targetConfig.background.desktopLyrics.enabled
+        }
+
+        TagRow {
+            last: true
+            label: qsTr("Filtered apps")
+            subtext: qsTr("App names to include or exclude (case-insensitive)")
+            configNode: root.targetConfig.background.desktopLyrics
+            propertyName: "filteredApps"
+            values: root.targetConfig.background.desktopLyrics.filteredApps
+            onValueAdded: value => {
+                const apps = root.targetConfig.background.desktopLyrics.filteredApps;
+                apps.push(value);
+                root.targetConfig.background.desktopLyrics.filteredApps = apps;
+                root.targetConfig.save();
+            }
+            onValueRemoved: index => {
+                const apps = root.targetConfig.background.desktopLyrics.filteredApps;
+                apps.splice(index, 1);
+                root.targetConfig.background.desktopLyrics.filteredApps = apps;
+                root.targetConfig.save();
+            }
+            enabled: root.targetConfig.background.desktopLyrics.enabled && root.targetConfig.background.desktopLyrics.appFilter !== AppFilter.Disabled
+        }
+
+        SectionHeader {
             text: qsTr("Appearance")
         }
 

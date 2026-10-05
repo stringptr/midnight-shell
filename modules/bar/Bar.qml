@@ -388,7 +388,7 @@ Item {
         DelegateChoice {
             roleValue: "spotify"
             delegate: EntryWrapper {
-                visible: enabled && !root.fullscreen && (!Config.bar.spotify.autoHide || Players.list.length > 0)
+                visible: enabled && !root.fullscreen && (!Config.bar.spotify.autoHide || Players.list.length > 0) && Players.appFilterPasses(Config.bar.spotify.appFilter, Config.bar.spotify.filteredApps, Players.active)
                 Spotify {
                     objectName: "taskbarSpotify"
                     popouts: root.popouts

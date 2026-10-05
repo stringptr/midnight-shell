@@ -26,7 +26,7 @@ ENUM(GpuMode, Always, Charging, Never)
 ENUM(NotifsFullscreen, On, Off)
 ENUM(TemperatureUnit, Celsius, Fahrenheit, Kelvin)
 ENUM(DataUnit, Binary, Decimal)
-ENUM(VisualiserAppFilter, Disabled, Whitelist, Blacklist)
+ENUM(AppFilter, Disabled, Whitelist, Blacklist)
 
 #undef ENUM
 

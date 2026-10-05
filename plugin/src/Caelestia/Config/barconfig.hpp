@@ -111,6 +111,8 @@ class BarSpotify : public settings::ObjectNode {
     CONFIG_PROPERTY(bool, inverted, false)
     CONFIG_PROPERTY(bool, horizontalVolume, false)
     CONFIG_PROPERTY(bool, autoHide, false)
+    CONFIG_ENUM_PROPERTY(AppFilter, appFilter, AppFilter::Disabled)
+    CONFIG_PROPERTY(QStringList, filteredApps, { u"Spotify"_s })
 };
 
 // Bar entries split into three anchored sections. `start` hugs the top/left edge,

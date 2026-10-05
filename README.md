@@ -566,6 +566,7 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
         },
         "desktopLyrics": {
             "alignment": 1,
+            "appFilter": "Disabled",
             "autoHide": true,
             "background": {
                 "blur": true,
@@ -573,6 +574,9 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
                 "opacity": 0.7
             },
             "enabled": false,
+            "filteredApps": [
+                "Spotify"
+            ],
             "invertColors": false,
             "position": "bottom-center",
             "scale": 1,
@@ -590,9 +594,13 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
         "videoWallpaperPaused": false,
         "videoWallpaperSoundEnabled": false,
         "visualiser": {
+            "appFilter": "Disabled",
             "autoHide": true,
             "blur": false,
             "enabled": false,
+            "filteredApps": [
+                "Spotify"
+            ],
             "renderer": "gpu",
             "rounding": 1,
             "spacing": 1
@@ -657,6 +665,18 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
         "dock": {
             "monitorCenter": true,
             "recolourIcons": false
+        },
+        "spotify": {
+            "appFilter": "Disabled",
+            "autoHide": false,
+            "background": false,
+            "filteredApps": [
+                "Spotify"
+            ],
+            "horizontalVolume": false,
+            "inverted": false,
+            "maxTitleLength": 25,
+            "showVisualiser": true
         },
         "dragThreshold": 20,
         "peripheralBatteryExcluded": [],

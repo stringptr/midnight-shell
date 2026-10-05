@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick.Layouts
 import Caelestia.Config
+import qs.components.controls
 import qs.modules.nexus.common
 
 PageBase {
@@ -86,7 +87,6 @@ PageBase {
         }
 
         ToggleRow {
-            last: true
             text: qsTr("Horizontal volume slider")
             subtext: qsTr("Place a horizontal volume slider below the playback controls in the popout")
             configNode: root.targetConfig.bar.spotify
@@ -96,6 +96,61 @@ PageBase {
                 root.targetConfig.bar.spotify.horizontalVolume = checked;
                 root.targetConfig.save();
             }
+        }
+
+        SectionHeader {
+            text: qsTr("App filter")
+        }
+
+        SelectRow {
+            first: true
+            label: qsTr("Filter mode")
+            subtext: qsTr("Only show the widget for specific apps")
+            configNode: root.targetConfig.bar.spotify
+            propertyName: "appFilter"
+            menuItems: [
+                MenuItem { text: qsTr("Disabled") },
+                MenuItem { text: qsTr("Whitelist") },
+                MenuItem { text: qsTr("Blacklist") }
+            ]
+            active: {
+                switch (root.targetConfig.bar.spotify.appFilter) {
+                case AppFilter.Whitelist: return menuItems[1];
+                case AppFilter.Blacklist: return menuItems[2];
+                default: return menuItems[0];
+                }
+            }
+            onSelected: item => {
+                if (item === menuItems[1])
+                    root.targetConfig.bar.spotify.appFilter = AppFilter.Whitelist;
+                else if (item === menuItems[2])
+                    root.targetConfig.bar.spotify.appFilter = AppFilter.Blacklist;
+                else
+                    root.targetConfig.bar.spotify.appFilter = AppFilter.Disabled;
+                root.targetConfig.save();
+            }
+        }
+
+        TagRow {
+            last: true
+            label: qsTr("Filtered apps")
+            subtext: qsTr("App names to include or exclude (case-insensitive)")
+            configNode: root.targetConfig.bar.spotify
+            propertyName: "filteredApps"
+            values: root.targetConfig.bar.spotify.filteredApps
+            onValueAdded: value => {
+                const apps = root.targetConfig.bar.spotify.filteredApps;
+                apps.push(value);
+                root.targetConfig.bar.spotify.filteredApps = apps;
+                root.targetConfig.save();
+            }
+            onValueRemoved: index => {
+                const apps = root.targetConfig.bar.spotify.filteredApps;
+                apps.splice(index, 1);
+                root.targetConfig.bar.spotify.filteredApps = apps;
+                root.targetConfig.save();
+            }
+            enabled: root.targetConfig.bar.spotify.appFilter !== AppFilter.Disabled
         }
     }
 }

@@ -17,16 +17,11 @@ Item {
 
     readonly property bool appFilterActive: {
         const filter = Config.background.visualiser.appFilter;
-        if (filter === VisualiserAppFilter.Disabled) return true;
+        if (filter === AppFilter.Disabled) return true;
         if (Players.list.length === 0) return true;
         const filteredApps = Config.background.visualiser.filteredApps;
-        function isPlayerFiltered(player) {
-            const identity = Players.getIdentity(player).toLowerCase();
-            if (!identity) return false;
-            return filteredApps.some(a => identity.includes(a.toLowerCase()));
-        }
-        if (filter === VisualiserAppFilter.Whitelist) return Players.list.some(p => isPlayerFiltered(p));
-        if (filter === VisualiserAppFilter.Blacklist) return !Players.list.some(p => isPlayerFiltered(p));
+        if (filter === AppFilter.Whitelist) return Players.list.some(p => Players.playerMatchesApps(filteredApps, p));
+        if (filter === AppFilter.Blacklist) return !Players.list.some(p => Players.playerMatchesApps(filteredApps, p));
         return true;
     }
     readonly property bool shouldBeActive: Config.background.visualiser.enabled && appFilterActive && !(GameMode.enabled && GlobalConfig.utilities.gameMode.disableVisualizer) && (!Config.background.visualiser.autoHide || (Niri.windows.filter(t => t.output === screen.name).every(t => t.floating) ?? true))
@@ -45,11 +40,6 @@ Item {
             if (!root.appFilterActive || Players.list.length === 0) return "";
             const filter = Config.background.visualiser.appFilter;
             const filteredApps = Config.background.visualiser.filteredApps;
-            function isPlayerFiltered(player) {
-                const identity = Players.getIdentity(player).toLowerCase();
-                if (!identity) return false;
-                return filteredApps.some(a => identity.includes(a.toLowerCase()));
-            }
             function matchStream(player) {
                 const identity = Players.getIdentity(player).toLowerCase();
                 if (!identity) return "";
@@ -63,10 +53,10 @@ Item {
                 return stream?.name ?? "";
             }
             let targetPlayer = null;
-            if (filter === VisualiserAppFilter.Whitelist) {
-                targetPlayer = Players.list.find(p => isPlayerFiltered(p));
-            } else if (filter === VisualiserAppFilter.Blacklist) {
-                targetPlayer = Players.list.find(p => !isPlayerFiltered(p));
+            if (filter === AppFilter.Whitelist) {
+                targetPlayer = Players.list.find(p => Players.playerMatchesApps(filteredApps, p));
+            } else if (filter === AppFilter.Blacklist) {
+                targetPlayer = Players.list.find(p => !Players.playerMatchesApps(filteredApps, p));
             }
             return targetPlayer ? matchStream(targetPlayer) : "";
         }

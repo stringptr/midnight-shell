@@ -30,6 +30,24 @@ Singleton {
         return alias?.to ?? player.identity;
     }
 
+    // Case-insensitive substring match of a player's (alias-resolved) identity
+    // against a user-configured app name list.
+    function playerMatchesApps(apps: list<string>, player: MprisPlayer): bool {
+        const identity = root.getIdentity(player).toLowerCase();
+        if (!identity)
+            return false;
+        return apps.some(a => identity.includes(a.toLowerCase()));
+    }
+
+    // Whitelist/blacklist predicate for a single player. Disabled modes and
+    // absent players always pass so panels keep their no-player fallback.
+    function appFilterPasses(mode: int, apps: list<string>, player: MprisPlayer): bool {
+        if (mode === AppFilter.Disabled || !player)
+            return true;
+        const matches = root.playerMatchesApps(apps, player);
+        return mode === AppFilter.Whitelist ? matches : !matches;
+    }
+
     function supportsAppVolume(player: MprisPlayer): bool {
         if (!player)
             return false;

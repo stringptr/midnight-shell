@@ -100,18 +100,18 @@ PageBase {
             ]
             active: {
                 switch (root.targetConfig.background.visualiser.appFilter) {
-                case VisualiserAppFilter.Whitelist: return menuItems[1];
-                case VisualiserAppFilter.Blacklist: return menuItems[2];
+                case AppFilter.Whitelist: return menuItems[1];
+                case AppFilter.Blacklist: return menuItems[2];
                 default: return menuItems[0];
                 }
             }
             onSelected: item => {
                 if (item === menuItems[1])
-                    root.targetConfig.background.visualiser.appFilter = VisualiserAppFilter.Whitelist;
+                    root.targetConfig.background.visualiser.appFilter = AppFilter.Whitelist;
                 else if (item === menuItems[2])
-                    root.targetConfig.background.visualiser.appFilter = VisualiserAppFilter.Blacklist;
+                    root.targetConfig.background.visualiser.appFilter = AppFilter.Blacklist;
                 else
-                    root.targetConfig.background.visualiser.appFilter = VisualiserAppFilter.Disabled;
+                    root.targetConfig.background.visualiser.appFilter = AppFilter.Disabled;
                 root.targetConfig.save();
             }
             enabled: root.targetConfig.background.visualiser.enabled
@@ -137,7 +137,7 @@ PageBase {
                 root.targetConfig.background.visualiser.filteredApps = apps;
                 root.targetConfig.save();
             }
-            enabled: root.targetConfig.background.visualiser.enabled && root.targetConfig.background.visualiser.appFilter !== VisualiserAppFilter.Disabled
+            enabled: root.targetConfig.background.visualiser.enabled && root.targetConfig.background.visualiser.appFilter !== AppFilter.Disabled
         }
 
         SectionHeader {
