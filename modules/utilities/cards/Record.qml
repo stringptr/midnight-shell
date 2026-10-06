@@ -22,6 +22,99 @@ StyledRect {
     radius: Tokens.rounding.large
     color: Colours.tPalette.m3surfaceContainer
 
+    states: State {
+        name: "recording"
+        when: Recorder.running
+
+        PropertyChanges {
+            target: listOrControls
+            sourceComponent: recordingControls
+        }
+    }
+
+    transitions: [
+        Transition {
+            from: ""
+            to: "recording"
+
+            SequentialAnimation {
+                Anim {
+                    target: listOrControls
+                    property: "opacity"
+                    to: 0
+                    type: Anim.DefaultEffects
+                }
+                PropertyAction {
+                    target: listOrControls
+                    property: "heightAnimArmed"
+                    value: true
+                }
+                PropertyAction {
+                    target: listOrControls
+                    property: "sourceComponent"
+                }
+                ParallelAnimation {
+                    Anim {
+                        target: listOrControls
+                        property: "opacity"
+                        to: 1
+                        type: Anim.SlowEffects
+                    }
+                    SequentialAnimation {
+                        PauseAnimation {
+                            duration: Tokens.anim.durations.expressiveDefaultSpatial
+                        }
+                        PropertyAction {
+                            target: listOrControls
+                            property: "heightAnimArmed"
+                            value: false
+                        }
+                    }
+                }
+            }
+        },
+        Transition {
+            from: "recording"
+            to: ""
+
+            SequentialAnimation {
+                Anim {
+                    target: listOrControls
+                    property: "opacity"
+                    to: 0
+                    type: Anim.DefaultEffects
+                }
+                PropertyAction {
+                    target: listOrControls
+                    property: "heightAnimArmed"
+                    value: true
+                }
+                PropertyAction {
+                    target: listOrControls
+                    property: "sourceComponent"
+                }
+                ParallelAnimation {
+                    Anim {
+                        target: listOrControls
+                        property: "opacity"
+                        to: 1
+                        type: Anim.SlowEffects
+                    }
+                    SequentialAnimation {
+                        PauseAnimation {
+                            duration: Tokens.anim.durations.expressiveDefaultSpatial
+                        }
+                        PropertyAction {
+                            target: listOrControls
+                            property: "heightAnimArmed"
+                            value: false
+                        }
+                    }
+                }
+            }
+        }
+    ]
+
     Ref {
         service: Recorder
     }
@@ -118,55 +211,17 @@ StyledRect {
         Loader {
             id: listOrControls
 
-            property bool running: Recorder.running
+            property bool heightAnimArmed: false
 
-            asynchronous: true
             Layout.fillWidth: true
             Layout.preferredHeight: implicitHeight
-            sourceComponent: running ? recordingControls : recordingList
+            sourceComponent: recordingList
             clip: Layout.preferredHeight < implicitHeight
 
             Behavior on Layout.preferredHeight {
-                id: locHeightAnim
-
-                enabled: false
+                enabled: listOrControls.heightAnimArmed
 
                 Anim {}
-            }
-
-            Behavior on running {
-                SequentialAnimation {
-                    Anim {
-                        target: listOrControls
-                        property: "opacity"
-                        to: 0
-                        type: Anim.DefaultEffects
-                    }
-                    PropertyAction {
-                        target: locHeightAnim
-                        property: "enabled"
-                        value: true
-                    }
-                    PropertyAction {}
-                    ParallelAnimation {
-                        SequentialAnimation {
-                            PauseAnimation {
-                                duration: 100
-                            }
-                            PropertyAction {
-                                target: locHeightAnim
-                                property: "enabled"
-                                value: false
-                            }
-                        }
-                        Anim {
-                            target: listOrControls
-                            property: "opacity"
-                            to: 1
-                            type: Anim.SlowEffects
-                        }
-                    }
-                }
             }
         }
     }

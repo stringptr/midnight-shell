@@ -16,6 +16,7 @@ Singleton {
     property list<string> startArgs
     property bool needsStop
     property bool needsPause
+    property bool stopping
 
     function start(extraArgs = []): void {
         needsStart = true;
@@ -25,6 +26,7 @@ Singleton {
 
     function stop(): void {
         needsStop = true;
+        stopping = true;
         checkProc.running = true;
     }
 
@@ -69,13 +71,16 @@ Singleton {
                 props.paused = false;
                 props.elapsed = 0;
                 Audio.playVideoRecord();
-            } else if (running !== props.running) {
+            } else if (running !== props.running && !(running && root.stopping)) {
                 // The recording was started/stopped outside the shell (e.g. via
                 // keybind), or a region selection is pending/was cancelled
                 props.running = running;
                 props.paused = false;
                 props.elapsed = 0;
             }
+
+            if (!running)
+                root.stopping = false;
 
             root.needsStart = false;
             root.needsStop = false;
