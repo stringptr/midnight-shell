@@ -10,9 +10,9 @@ MaterialIcon {
     animate: true
     text: {
         if (!UPower.displayDevice.isLaptopBattery) {
-            if (PowerProfiles.profile === PowerProfile.PowerSaver)
+            if (PowerCtl.profile === PowerProfile.PowerSaver)
                 return "energy_savings_leaf";
-            if (PowerProfiles.profile === PowerProfile.Performance)
+            if (PowerCtl.profile === PowerProfile.Performance)
                 return "rocket_launch";
             return "balance";
         }

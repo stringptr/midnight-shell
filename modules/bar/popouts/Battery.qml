@@ -32,6 +32,9 @@ Column {
     spacing: Tokens.spacing.medium
     width: Math.max(Tokens.sizes.bar.batteryWidth, _isSidebarOpen ? Tokens.sizes.sidebar.width - Tokens.padding.extraLargeIncreased : 0)
 
+    // Profile state comes from asusctl when available; refresh on every open.
+    Component.onCompleted: PowerCtl.fetchProfile()
+
     StyledText {
         text: UPower.displayDevice.isLaptopBattery ? Tr.trCtx("Remaining: %1%", "battery remaining").arg(Math.round(UPower.displayDevice.percentage * 100)) : Tr.tr("No battery detected")
     }
@@ -40,7 +43,7 @@ Column {
         text: {
             const dev = UPower.displayDevice;
             if (!dev.isLaptopBattery)
-                return Tr.tr("Power profile: %1").arg(root.powerProfileToString(PowerProfiles.profile));
+                return Tr.tr("Power profile: %1").arg(root.powerProfileToString(PowerCtl.profile));
 
             if (UPower.onBattery) {
                 const time = root.formatSeconds(dev.timeToEmpty);
@@ -120,7 +123,7 @@ Column {
         id: profiles
 
         property string current: {
-            const p = PowerProfiles.profile;
+            const p = PowerCtl.profile;
             if (p === PowerProfile.PowerSaver)
                 return saver.icon;
             if (p === PowerProfile.Performance)
@@ -224,7 +227,7 @@ Column {
         StateLayer {
             radius: Tokens.rounding.full
             color: profiles.current === parent.icon ? Colours.palette.m3onPrimary : Colours.palette.m3onSurface
-            onClicked: PowerProfiles.profile = parent.profile
+            onClicked: PowerCtl.setProfile(parent.profile)
         }
 
         MaterialIcon {
