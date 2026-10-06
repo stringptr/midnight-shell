@@ -236,6 +236,9 @@ QtObject {
                 Component {
                     GameModePage {}
                 }
+                Component {
+                    GameModeTargetsPage {}
+                }
 
                 Component {
                     ArpcPage {}
