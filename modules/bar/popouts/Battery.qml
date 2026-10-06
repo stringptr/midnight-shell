@@ -5,6 +5,7 @@ import Quickshell.Services.UPower
 import Caelestia.Config
 import Caelestia.I18n
 import qs.components
+import qs.components.controls
 import qs.services
 
 Column {
@@ -32,8 +33,11 @@ Column {
     spacing: Tokens.spacing.medium
     width: Math.max(Tokens.sizes.bar.batteryWidth, _isSidebarOpen ? Tokens.sizes.sidebar.width - Tokens.padding.extraLargeIncreased : 0)
 
-    // Profile state comes from asusctl when available; refresh on every open.
-    Component.onCompleted: PowerCtl.fetchProfile()
+    // Profile and charge limit state come from asusctl when available; refresh on every open.
+    Component.onCompleted: {
+        PowerCtl.fetchProfile();
+        PowerCtl.fetchChargeLimit();
+    }
 
     StyledText {
         text: UPower.displayDevice.isLaptopBattery ? Tr.trCtx("Remaining: %1%", "battery remaining").arg(Math.round(UPower.displayDevice.percentage * 100)) : Tr.tr("No battery detected")
@@ -204,6 +208,37 @@ Column {
 
             profile: PowerProfile.Performance
             icon: "rocket_launch"
+        }
+    }
+
+    Column {
+        id: chargeSection
+
+        // Follow the slider fill while dragging; otherwise the committed limit.
+        readonly property int shownLimit: chargeSlider.dragging ? Math.round(chargeSlider.from + chargeSlider.pos * (chargeSlider.to - chargeSlider.from)) : PowerCtl.chargeLimit
+
+        visible: PowerCtl.usingAsusctl
+
+        anchors.horizontalCenter: parent.horizontalCenter
+        spacing: Tokens.spacing.small
+
+        StyledText {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: chargeSection.shownLimit > 0 ? Tr.tr("Charge limit: %1%").arg(chargeSection.shownLimit) : Tr.tr("Charge limit")
+        }
+
+        StyledSlider {
+            id: chargeSlider
+
+            anchors.horizontalCenter: parent.horizontalCenter
+
+            width: root.width - Tokens.padding.medium * 2
+
+            from: 20
+            to: 100
+            stepSize: 1
+            value: PowerCtl.chargeLimit > 0 ? PowerCtl.chargeLimit : 100
+            onReleased: v => PowerCtl.setChargeLimit(Math.round(from + v * (to - from)))
         }
     }
 
