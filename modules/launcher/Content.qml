@@ -114,7 +114,8 @@ Item {
                 text = Visibilities.launcherInitialSearch;
                 Visibilities.launcherInitialSearch = "";
             }
-            forceActiveFocus();
+            if (root.screenState.launcher)
+                forceActiveFocus();
         }
 
         Connections {
@@ -124,6 +125,7 @@ Item {
                         search.text = Visibilities.launcherInitialSearch;
                         Visibilities.launcherInitialSearch = "";
                     }
+                    search.forceActiveFocus();
                 } else {
                     search.text = "";
                 }

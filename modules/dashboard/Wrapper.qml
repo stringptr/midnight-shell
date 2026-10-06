@@ -30,20 +30,13 @@ Item {
     readonly property real nonAnimHeight: (content.item as Content)?.nonAnimHeight ?? 0
     readonly property bool shouldBeActive: screenState.dashboard && Config.dashboard.enabled
 
-    // Hold the content for a moment after it hides instead of destroying it right
-    // away, so reopening the dashboard quickly doesn't rebuild the whole subtree
-    // (and re-ref its services) on the GUI thread. keepAlive is only ever cleared
-    // by the timer, never by a property change, so the loader's active binding
-    // can't flip off and back on during a close.
-    property bool keepAlive: false
-    readonly property int keepAliveMs: 5000
-
     // Set CAELESTIA_DEBUG_DASH=1 to log toggle -> build -> first frame timings
     readonly property bool debugOpen: Quickshell.env("CAELESTIA_DEBUG_DASH") === "1"
     property real debugToggleAt: 0
     property bool debugAwaitingFrame: false
 
-    property real offsetScale: shouldBeActive ? 0 : 1
+    readonly property bool contentReady: content.status === Loader.Ready || content.status === Loader.Error
+    property real offsetScale: shouldBeActive && contentReady ? 0 : 1
 
     // The expressive bezier overshoots offsetScale past 0, and this ~1000px
     // slide would retreat the panel past blob.frag's bridge reach
@@ -62,9 +55,6 @@ Item {
     opacity: 1 - offsetScale
 
     onShouldBeActiveChanged: {
-        if (!shouldBeActive)
-            keepAliveTimer.restart();
-
         if (debugOpen) {
             console.log(`[dash-open] ${shouldBeActive ? "toggle open, content " + (content.active ? "held" : "cold") : "close"}`);
             if (shouldBeActive) {
@@ -72,13 +62,6 @@ Item {
                 debugAwaitingFrame = true;
             }
         }
-    }
-
-    Timer {
-        id: keepAliveTimer
-
-        interval: root.keepAliveMs
-        onTriggered: root.keepAlive = false
     }
 
     // Frame probe is inert unless CAELESTIA_DEBUG_DASH=1 logging is enabled
@@ -103,10 +86,9 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
 
-        active: root.shouldBeActive || root.visible || root.keepAlive
+        active: root.shouldBeActive || root.visible || Config.dashboard.keepAlive
 
         onLoaded: {
-            root.keepAlive = true;
             if (root.debugOpen && root.debugToggleAt > 0)
                 console.log(`[dash-open] content built +${Math.round(Date.now() - root.debugToggleAt)}ms`);
         }

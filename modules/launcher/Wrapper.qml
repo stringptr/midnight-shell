@@ -22,7 +22,8 @@ Item {
         return max;
     }
 
-    property real offsetScale: shouldBeActive ? 0 : 1
+    readonly property bool contentReady: content.status === Loader.Ready || content.status === Loader.Error
+    property real offsetScale: shouldBeActive && contentReady ? 0 : 1
 
     // Expressive overshoot past flush would retreat this panel past
     // blob.frag's bridge reach (2-sqrt2)*smoothing and tear the junction band.
@@ -60,7 +61,7 @@ Item {
         anchors.top: parent.top
         anchors.horizontalCenter: parent.horizontalCenter
 
-        active: root.shouldBeActive || root.visible
+        active: root.shouldBeActive || root.visible || Config.launcher.keepAlive
 
         sourceComponent: Content {
             screenState: root.screenState

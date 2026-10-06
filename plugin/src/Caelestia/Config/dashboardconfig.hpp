@@ -20,6 +20,7 @@ class DashboardConfig : public settings::ObjectNode {
     CONFIG_NODE(DashboardConfig, settings::ObjectNode)
 
     CONFIG_PROPERTY(bool, enabled, true)
+    CONFIG_PROPERTY(bool, keepAlive, true)
     CONFIG_PROPERTY(bool, showOnHover, true)
     CONFIG_PROPERTY(bool, showDashboard, true)
     CONFIG_PROPERTY(bool, showMedia, true)

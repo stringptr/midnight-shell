@@ -758,6 +758,7 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
         "colorizeMediaGif": true,
         "dragThreshold": 50,
         "enabled": true,
+        "keepAlive": true,
         "mediaUpdateInterval": 500,
         "performance": {
             "showBattery": true,
@@ -1016,6 +1017,7 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
         "favouriteClips": [],
         "favouriteEmojis": [],
         "hiddenApps": [],
+        "keepAlive": true,
         "maxShown": 7,
         "maxWallpapers": 9,
         "showOnHover": false,

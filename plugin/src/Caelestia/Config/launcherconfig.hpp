@@ -29,6 +29,7 @@ class LauncherConfig : public settings::ObjectNode {
     CONFIG_NODE(LauncherConfig, settings::ObjectNode)
 
     CONFIG_PROPERTY(bool, enabled, true)
+    CONFIG_PROPERTY(bool, keepAlive, true)
     CONFIG_PROPERTY(bool, showOnHover, false)
     CONFIG_PROPERTY(int, maxShown, 7)
     CONFIG_PROPERTY(int, maxWallpapers, 9)

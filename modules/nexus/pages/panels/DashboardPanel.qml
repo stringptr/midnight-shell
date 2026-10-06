@@ -154,6 +154,19 @@ PageBase {
             }
         }
 
+        ToggleRow {
+            Layout.fillWidth: true
+            text: qsTr("Keep content alive")
+            subtext: qsTr("Keep content loaded after closing for instant reopening")
+            configNode: root.targetConfig.dashboard
+            propertyName: "keepAlive"
+            checked: root.targetConfig.dashboard.keepAlive
+            onToggled: {
+                root.targetConfig.dashboard.keepAlive = checked;
+                root.targetConfig.save();
+            }
+        }
+
         SelectRow {
             Layout.fillWidth: true
             label: qsTr("Dashboard profile picture shape")

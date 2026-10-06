@@ -48,6 +48,18 @@ PageBase {
             }
         }
 
+        ToggleRow {
+            text: qsTr("Keep content alive")
+            subtext: qsTr("Keep content loaded after closing for instant reopening")
+            configNode: root.targetConfig.launcher
+            propertyName: "keepAlive"
+            checked: root.targetConfig.launcher.keepAlive
+            onToggled: {
+                root.targetConfig.launcher.keepAlive = checked;
+                root.targetConfig.save();
+            }
+        }
+
         TextFieldRow {
             id: prefixRow
 
