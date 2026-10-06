@@ -138,7 +138,7 @@ QtObject {
         }
 
         function onImageChanged(): void {
-            notif.image = notif.notification.image;
+            notif.image = notif.normalizeImage(notif.notification.image);
             notif.maybeTriggerDummyImageLoader();
         }
 
@@ -195,6 +195,16 @@ QtObject {
         }
     }
 
+    function normalizeImage(path: string): string {
+        const prefix = "image://icon/";
+        if (path.startsWith(prefix)) {
+            const id = path.slice(prefix.length);
+            if (id.startsWith("/") || id.startsWith("file:"))
+                return Qt.resolvedUrl(id);
+        }
+        return path;
+    }
+
     function maybeTriggerDummyImageLoader(): void {
         if (image && !image.startsWith("image://icon/") && !image.startsWith(Paths.notifimagecache))
             dummyImageLoader.active = true;
@@ -228,7 +238,7 @@ QtObject {
         body = notification.body;
         appIcon = notification.appIcon;
         appName = notification.appName;
-        image = notification.image;
+        image = normalizeImage(notification.image);
         maybeTriggerDummyImageLoader();
         expireTimeout = notification.expireTimeout;
         hints = notification.hints;

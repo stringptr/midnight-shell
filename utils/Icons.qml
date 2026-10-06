@@ -133,6 +133,14 @@ Singleton {
         return false;
     }
 
+    function iconSource(icon: string): string {
+        if (!icon)
+            return "";
+        if (icon.startsWith("/") || icon.startsWith("file:") || icon.startsWith("image://"))
+            return Qt.resolvedUrl(icon);
+        return Quickshell.iconPath(icon);
+    }
+
     function getAppIcon(name: string, fallback: string): string {
         const icon = DesktopEntries.heuristicLookup(name)?.icon;
         if (fallback !== "undefined")
