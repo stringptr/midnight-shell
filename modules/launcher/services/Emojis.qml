@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import Caelestia
 import Caelestia.Config
+import qs.utils
 
 QtObject {
     id: root
@@ -46,7 +47,7 @@ QtObject {
 
     property Process freqReader: Process {
         running: false
-        command: ["test", "-f", Paths.config + "emoji-frequencies.json", "&&", "cat", Paths.config + "emoji-frequencies.json", "||", "echo", "{}"]
+        command: ["sh", "-c", `cat "${Paths.config}/emoji-frequencies.json" 2>/dev/null || echo {}`]
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
@@ -74,8 +75,7 @@ QtObject {
     }
 
     function saveFrequencies(): void {
-        freqWriter.arguments = ["-echo", JSON.stringify(frequencies), ">", Paths.config + "emoji-frequencies.json"];
-        freqWriter.running = true;
+        freqWriter.exec(["sh", "-c", `printf '%s' '${JSON.stringify(frequencies)}' > "${Paths.config}/emoji-frequencies.json"`]);
     }
 
     function recordUsage(char: string): void {
