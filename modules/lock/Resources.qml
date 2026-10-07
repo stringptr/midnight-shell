@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import Quickshell
 import M3Shapes
 import Caelestia.Config
+import Caelestia.I18n
 import Caelestia.Services
 import qs.components
 import qs.components.controls
@@ -16,6 +17,7 @@ import qs.utils
 StyledRect {
     id: root
 
+    readonly property bool sessionControlsShown: GlobalConfig.lock.enableSessionControls && hover.hovered
     readonly property real fontScale: {
         const diff = width / 391 - 1; // 391 is the width at 1080 height screen
         return 1 + Math.pow(Math.abs(diff), 0.8) * Math.sign(diff);
@@ -150,7 +152,7 @@ StyledRect {
             spacing: Tokens.spacing.large
 
             transform: buttonsTranslate
-            opacity: hover.hovered ? 1 : 0
+            opacity: root.sessionControlsShown ? 1 : 0
 
             Behavior on opacity {
                 Anim {}

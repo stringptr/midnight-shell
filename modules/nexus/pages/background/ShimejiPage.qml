@@ -1,10 +1,12 @@
 import QtQuick
 import QtQuick.Layouts
 import Caelestia.Config
+import Caelestia.I18n
 import qs.modules.nexus.common
 
 PageBase {
     id: root
+
     title: qsTr("Shimeji characters")
     isSubPage: true
 
@@ -42,6 +44,21 @@ PageBase {
             checked: root.targetConfig.shimeji.autoHide
             onToggled: {
                 root.targetConfig.shimeji.autoHide = checked;
+                root.targetConfig.save();
+            }
+            enabled: root.targetConfig.shimeji.enabled
+        }
+
+        SliderRow {
+            Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
+            Layout.fillWidth: true
+            configNode: root.targetConfig.shimeji
+            propertyName: "scale"
+            label: Tr.tr("Size")
+            value: (root.targetConfig.shimeji.scale - 0.5) / 1.5
+            valueLabel: Math.round(root.targetConfig.shimeji.scale * 100) + "%"
+            onMoved: v => {
+                root.targetConfig.shimeji.scale = 0.5 + v * 1.5;
                 root.targetConfig.save();
             }
             enabled: root.targetConfig.shimeji.enabled

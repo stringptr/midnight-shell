@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import Caelestia.Config
+import Caelestia.I18n
 import qs.components
 import qs.components.controls
 import qs.modules.nexus.common
@@ -57,6 +58,19 @@ PageBase {
             checked: root.targetConfig.bar.github.background
             onToggled: {
                 root.targetConfig.bar.github.background = checked;
+                root.targetConfig.save();
+            }
+        }
+
+        ToggleRow {
+            Layout.fillWidth: true
+            text: Tr.tr("Recolour icons")
+            subtext: Tr.tr("Use the system theme colour for the contribution squares")
+            configNode: root.targetConfig.bar.github
+            propertyName: "recolourIcons"
+            checked: root.targetConfig.bar.github.recolourIcons
+            onToggled: {
+                root.targetConfig.bar.github.recolourIcons = checked;
                 root.targetConfig.save();
             }
         }

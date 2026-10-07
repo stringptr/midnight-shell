@@ -42,6 +42,9 @@ Searcher {
 
     property var _hashCache: ({})
 
+    onWeVolumeChanged: weStore.writeAdapter()
+    onWeSilentChanged: weStore.writeAdapter()
+
     Timer {
         id: colorReleaseTimer
         interval: 180 
@@ -451,13 +454,14 @@ Searcher {
 
     property alias weVolume: weAdapter.volume
     property alias weSilent: weAdapter.silent
-    
+
     Component.onCompleted: CUtils.mkdirp(Paths.state + "/wallpaper")
 
     FileView {
         id: weStore
 
         path: `${Paths.state}/wallpaper/wallpaper-engine.json`
+        printErrors: false
         watchChanges: true
         onFileChanged: reload()
 
