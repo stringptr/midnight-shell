@@ -27,6 +27,8 @@ qml_module(caelestia-services
         storage.cpp
         lyriccandidate.cpp
         lyrics.cpp
+        qrc3des.cpp
+        qqlyric.cpp
         romanizer.cpp
         pinyin_data.cpp
         sessionmanager.cpp
@@ -56,6 +58,7 @@ qml_module(caelestia-services
         protobuf::libprotobuf
         OpenSSL::Crypto
         OpenSSL::SSL
+        ZLIB::ZLIB
         caelestia-util
         caelestia-core
         caelestia-config

@@ -99,18 +99,23 @@ private:
     void tryLocal(int reqId);
     void tryLrclib(int reqId);
     void tryNetEase(int reqId);
+    void tryQQMusic(int reqId);
     void chainNext(LyricsBackend justFailed, int reqId);
     void finishWithFallback(int reqId);
     void rememberFallback(const QVector<LyricLine>& lines, LyricsBackend backend);
 
     void searchLrclibCandidates(int reqId);
     void searchNetEaseCandidates(int reqId);
+    void searchQQMusicCandidates(int reqId);
 
     void fetchLrclibById(const QString& id, int reqId);
     void fetchNetEaseLyricsById(const QString& id, int reqId);
     void fetchNetEaseLyricsRanked(const QList<qint64>& ids, qsizetype index, int reqId);
+    void fetchQQMusicLyricsById(const QString& id, int reqId);
+    void fetchQQMusicLyricsRanked(const QList<qint64>& ids, qsizetype index, int reqId);
 
     QNetworkReply* getJson(const QUrl& url, const QHash<QByteArray, QByteArray>& headers = {});
+    QNetworkReply* postJson(const QUrl& url, const QHash<QByteArray, QByteArray>& headers, const QByteArray& body);
     void trackReply(int reqId, QNetworkReply* reply);
 
     void onPreferredBackendConfigChanged();
