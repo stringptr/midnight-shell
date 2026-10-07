@@ -31,7 +31,7 @@ ColumnLayout {
     StyledText {
         Layout.topMargin: Tokens.padding.medium
         Layout.leftMargin: Tokens.padding.small
-        text: qsTr("Audio")
+        text: Tr.tr("Audio")
         font.weight: 500
     }
 
@@ -52,7 +52,7 @@ ColumnLayout {
             spacing: Tokens.spacing.medium
 
             StyledText {
-                text: qsTr("Output device")
+                text: Tr.tr("Output device")
                 font: Tokens.font.body.builders.medium.weight(Font.Medium).build()
             }
 
@@ -91,7 +91,7 @@ ColumnLayout {
             spacing: Tokens.spacing.medium
 
             StyledText {
-                text: qsTr("Input device")
+                text: Tr.tr("Input device")
                 font: Tokens.font.body.builders.medium.weight(Font.Medium).build()
             }
 
@@ -115,7 +115,7 @@ ColumnLayout {
 
     StyledText {
         Layout.topMargin: Tokens.spacing.medium
-        text: Audio.muted ? qsTr("Volume (Muted)") : qsTr("Volume (%1%)").arg(Math.round(Audio.volume * 100))
+        text: Audio.muted ? Tr.tr("Volume (Muted)") : Tr.tr("Volume (%1%)").arg(Math.round(Audio.volume * 100))
         font: Tokens.font.body.builders.medium.weight(Font.Medium).build()
     }
 
@@ -146,7 +146,7 @@ ColumnLayout {
         inactiveColour: Colours.palette.m3primaryContainer
         inactiveOnColour: Colours.palette.m3onPrimaryContainer
         verticalPadding: Tokens.padding.small
-        text: qsTr("Open settings")
+        text: Tr.tr("Open settings")
         icon: "settings"
 
         onClicked: root.popouts.detachRequested("audio")

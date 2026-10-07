@@ -27,7 +27,7 @@ ColumnLayout {
     StyledText {
         Layout.topMargin: Tokens.padding.medium
         Layout.leftMargin: Tokens.padding.small
-        text: qsTr("Network")
+        text: Tr.tr("Network")
         font.weight: 500
     }
 
@@ -364,7 +364,6 @@ ColumnLayout {
             }
         }
     }
-
         }
     }
 
