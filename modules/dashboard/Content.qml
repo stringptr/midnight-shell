@@ -159,12 +159,20 @@ Item {
                         required property int index
                         required property var modelData
 
+                        property bool paneAlive: false
+
                         Layout.alignment: Qt.AlignTop
 
                         sourceComponent: modelData.component
 
+                        onActiveChanged: {
+                            if (active)
+                                paneAlive = true;
+                        }
 
                         Component.onCompleted: active = Qt.binding(() => {
+                            if (Config.dashboard.keepAlive && paneAlive)
+                                return true;
                             if (index === view.currentIndex)
                                 return true;
                             const vx = Math.floor(view.visibleArea.xPosition * view.contentWidth);
