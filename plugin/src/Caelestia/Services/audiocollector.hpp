@@ -76,6 +76,9 @@ private:
     quint32 m_sampleCount;
     QString m_targetNodeName;
 
+    [[nodiscard]] std::vector<float>* claimWriteBuffer();
+    void publishWriteBuffer(std::vector<float>* writeBuffer);
+
     void reload();
     void start() override;
     void stop() override;

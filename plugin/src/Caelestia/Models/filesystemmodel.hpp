@@ -81,7 +81,7 @@ public:
         Images,
         Videos,
         Files,
-        Dirs
+        Dirs,
     };
     Q_ENUM(Filter)
 
