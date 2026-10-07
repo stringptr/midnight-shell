@@ -121,7 +121,7 @@ Item {
 
         target: QsWindow.window
         property: "WlrLayershell.keyboardFocus"
-        value: WlrKeyboardFocus.OnDemand
+        value: WlrKeyboardFocus.Exclusive
     }
 
     Comp {
