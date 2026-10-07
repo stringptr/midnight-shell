@@ -1065,7 +1065,8 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
         "enableBrightness": true,
         "enableMicrophone": false,
         "enabled": true,
-        "hideDelay": 2000
+        "hideDelay": 2000,
+        "keepAlive": false
     },
     "paths": {
         "cacheDir": "/home/dim/.cache/caelestia",
@@ -1137,6 +1138,7 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
             "shutdown": "power_settings_new",
             "lock": "lock"
         },
+        "keepAlive": false,
         "vimKeybinds": false
     },
     "shimeji": {
@@ -1149,12 +1151,14 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
     },
     "sidebar": {
         "enabled": true,
+        "keepAlive": false,
         "showOnHover": false,
         "minHoverThreshold": 200,
         "dragThreshold": 80
     },
     "utilities": {
         "enabled": true,
+        "keepAlive": false,
         "maxToasts": 4,
         "quickToggles": [
             {

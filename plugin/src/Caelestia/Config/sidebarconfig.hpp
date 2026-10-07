@@ -9,6 +9,7 @@ class SidebarConfig : public settings::ObjectNode {
     CONFIG_NODE(SidebarConfig, settings::ObjectNode)
 
     CONFIG_PROPERTY(bool, enabled, true)
+    CONFIG_PROPERTY(bool, keepAlive, false)
     CONFIG_PROPERTY(bool, showNews, true)
     CONFIG_PROPERTY(bool, showOnHover, false)
     CONFIG_PROPERTY(int, minHoverThreshold, 200)

@@ -80,6 +80,7 @@ class SessionConfig : public settings::ObjectNode {
     QML_ANONYMOUS
 
     CONFIG_PROPERTY(bool, enabled, true)
+    CONFIG_PROPERTY(bool, keepAlive, false)
     CONFIG_PROPERTY(int, dragThreshold, 30)
     CONFIG_PROPERTY(bool, vimKeybinds, false)
     CONFIG_PROPERTY(QStringList, buttonOrder, DEFAULT_ARG({ u"lock"_s, u"logout"_s, u"shutdown"_s, u"sleep"_s, u"hibernate"_s, u"reboot"_s }))

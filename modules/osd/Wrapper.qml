@@ -99,7 +99,7 @@ Item {
         anchors.left: parent.left
 
         asynchronous: true
-        active: root.shouldBeActive || root.visible
+        active: root.shouldBeActive || root.visible || Config.osd.keepAlive
 
         sourceComponent: Content {
             monitor: root.monitor

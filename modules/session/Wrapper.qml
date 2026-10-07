@@ -32,7 +32,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
 
-        active: root.shouldBeActive || root.visible
+        active: root.shouldBeActive || root.visible || Config.session.keepAlive
 
         sourceComponent: Content {
             screenState: root.screenState

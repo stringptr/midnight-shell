@@ -41,7 +41,6 @@ PageBase {
         StepperRow {
             Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
             Layout.fillWidth: true
-            last: true
             label: qsTr("Drag threshold")
             subtext: qsTr("Pixels dragged before the sidebar opens")
             configNode: root.targetConfig.sidebar
@@ -52,6 +51,19 @@ PageBase {
             stepSize: 5
             onMoved: v => {
                 root.targetConfig.sidebar.dragThreshold = v;
+                root.targetConfig.save();
+            }
+        }
+
+        ToggleRow {
+            last: true
+            text: Tr.tr("Keep content alive")
+            subtext: Tr.tr("Keep content loaded after closing for instant reopening")
+            configNode: root.targetConfig.sidebar
+            propertyName: "keepAlive"
+            checked: root.targetConfig.sidebar.keepAlive
+            onToggled: {
+                root.targetConfig.sidebar.keepAlive = checked;
                 root.targetConfig.save();
             }
         }

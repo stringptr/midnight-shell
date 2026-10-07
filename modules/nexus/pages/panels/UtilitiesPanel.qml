@@ -45,7 +45,6 @@ PageBase {
 
         ToggleRow {
             first: true
-            last: true
             text: qsTr("Enabled")
             subtext: qsTr("Show the utilities panel")
             configNode: root.targetConfig.utilities
@@ -53,6 +52,19 @@ PageBase {
             checked: root.targetConfig.utilities.enabled
             onToggled: {
                 root.targetConfig.utilities.enabled = checked;
+                root.targetConfig.save();
+            }
+        }
+
+        ToggleRow {
+            last: true
+            text: Tr.tr("Keep content alive")
+            subtext: Tr.tr("Keep content loaded after closing for instant reopening")
+            configNode: root.targetConfig.utilities
+            propertyName: "keepAlive"
+            checked: root.targetConfig.utilities.keepAlive
+            onToggled: {
+                root.targetConfig.utilities.keepAlive = checked;
                 root.targetConfig.save();
             }
         }
