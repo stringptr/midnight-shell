@@ -197,29 +197,29 @@ PageBase {
         NavRow {
             first: true
             icon: "sports_esports"
-            text: qsTr("Game mode")
-            subtext: qsTr("Manage how MiDnight behaves while gaming")
+            text: Tr.tr("Game mode")
+            subtext: Tr.tr("Manage how MiDnight behaves while gaming")
             onClicked: root.nState.openSubPage(2)
         }
 
         NavRow {
             icon: "chat" // Using chat since discord icon might not be available in Material icons
-            text: qsTr("Discord Rich Presence")
-            subtext: qsTr("Broadcast your status to Vesktop")
+            text: Tr.tr("Discord Rich Presence")
+            subtext: Tr.tr("Broadcast your status to Vesktop")
             onClicked: root.nState.openSubPage(4)
         }
 
         NavRow {
             icon: "picture_in_picture"
-            text: qsTr("Picture in Picture")
-            subtext: qsTr("Configure PiP positioning and focus behavior")
+            text: Tr.tr("Picture in Picture")
+            subtext: Tr.tr("Configure PiP positioning and focus behavior")
             onClicked: root.nState.openSubPage(5)
         }
 
         NavRow {
             icon: "near_me"
-            text: qsTr("Quick Share")
-            subtext: qsTr("Auto-start and discoverability settings")
+            text: Tr.tr("Quick Share")
+            subtext: Tr.tr("Auto-start and discoverability settings")
             onClicked: root.nState.openSubPage(6)
         }
 
