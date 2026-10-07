@@ -368,6 +368,17 @@ ColumnLayout {
         }
     }
 
+    IconTextButton {
+        Layout.fillWidth: true
+        inactiveColour: Colours.palette.m3primaryContainer
+        inactiveOnColour: Colours.palette.m3onPrimaryContainer
+        verticalPadding: Tokens.padding.small
+        text: Tr.tr("Open settings")
+        icon: "settings"
+
+        onClicked: root.popouts.detachRequested("network")
+    }
+
     Connections {
         function onActiveChanged(): void {
             if (Nmcli.active && root.connectingToSsid === Nmcli.active.ssid) {
