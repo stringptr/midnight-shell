@@ -1228,9 +1228,10 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
 
 ### Shell blur (compositor)
 
-Frosted glass behind the bar, the screen border and every drawer panel is done by
-the compositor, not by the shell: `modules/drawers/ContentWindow.qml` publishes the
-footprint of each panel as a `BackgroundEffect.blurRegion`, and Niri frosts exactly
+Frosted glass behind the bar, the screen border, every drawer panel and the Nexus
+window is done by the compositor, not by the shell: `modules/drawers/ContentWindow.qml`
+publishes the footprint of each panel — and `modules/nexus/WindowFactory.qml` the
+dedicated Nexus window — as a `BackgroundEffect.blurRegion`, and Niri frosts exactly
 those rectangles through the `ext-background-effect-v1` protocol. Enable it under
 **Nexus → Wallpaper & style → Blur behind shell panels** (or set
 `appearance.blur.enabled`), alongside **Transparency** — an opaque shell surface has
@@ -1242,9 +1243,9 @@ Requirements:
   silently does nothing.
 - Blur must not be switched off globally in your Niri config — a top-level
   `blur { off }` block disables every background effect.
-- Include the shipped layer rule (`assets/niri/caelestia.kdl`) from your Niri
-  config so the shell's blur stays neutral even if you tune the global `blur {}`
-  block. If you maintain your own layer rules instead, mirror it:
+- Include the shipped rules (`assets/niri/caelestia.kdl`) from your Niri config so the
+  shell's blur stays neutral even if you tune the global `blur {}` block. If you
+  maintain your own rules instead, mirror them:
 
   ```kdl
   layer-rule {
@@ -1255,11 +1256,21 @@ Requirements:
           saturation 1
       }
   }
+
+  window-rule {
+      match title="^Nexus"
+      background-effect {
+          xray true
+          noise 0
+          saturation 1
+      }
+  }
   ```
 
-  The rule must **never** set `blur true` on `caelestia-drawers`: that is a
-  fullscreen surface, so it would frost the whole desktop and every window behind
-  it. Omitting `blur` leaves the per-panel region in charge.
+  Neither rule must set `blur true`: `caelestia-drawers` is a fullscreen surface, so
+  it would frost the whole desktop and every window behind it, and the Nexus window
+  would frost its transparent corners as a square. Omitting `blur` leaves the client
+  region in charge.
 
 ### Advanced configuration
 

@@ -28,3 +28,18 @@ layer-rule {
         saturation 1
     }
 }
+
+// Dedicated Nexus window blur. modules/nexus/WindowFactory.qml publishes the
+// whole rounded window (Tokens.rounding.large) via BackgroundEffect.blurRegion,
+// same protocol path as the drawers. The rule pins the same neutral look; the
+// matcher is the window title prefix ("Nexus — <page>"). As above, never add
+// `blur`: the client region must stay in charge so the transparent corners are
+// not frosted into a square.
+window-rule {
+    match title="^Nexus"
+    background-effect {
+        xray true
+        noise 0
+        saturation 1
+    }
+}

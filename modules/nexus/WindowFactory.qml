@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Wayland
 import Caelestia.Config
 import Caelestia.I18n
 import qs.components
@@ -25,8 +26,14 @@ Singleton {
         FloatingWindow {
             id: win
 
+            readonly property bool shellBlurActive: GlobalConfig.appearance.blur.enabled
+                && !GlobalConfig.appearance.pitchBlack
+                && win.color.a < 1.0
+
             color: Colours.tPalette.m3surface
             surfaceFormat.opaque: false
+
+            BackgroundEffect.blurRegion: win.shellBlurActive ? blurRegion : null
 
             onVisibleChanged: {
                 if (!visible)
@@ -43,6 +50,16 @@ Singleton {
             contentItem.Tokens.screen: screen.name
 
             title: Tr.tr("Nexus — %1").arg(PageRegistry.pages[nexus.nState.currentPageIdx].label)
+
+            Region {
+                id: blurRegion
+
+                x: 0
+                y: 0
+                width: win.width
+                height: win.height
+                radius: Tokens.rounding.large
+            }
 
             Nexus {
                 id: nexus
