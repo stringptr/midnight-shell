@@ -27,6 +27,8 @@ qml_module(caelestia-services
         storage.cpp
         lyriccandidate.cpp
         lyrics.cpp
+        romanizer.cpp
+        pinyin_data.cpp
         sessionmanager.cpp
         sessionmanager.hpp
         discordipc.cpp

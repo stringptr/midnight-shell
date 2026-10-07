@@ -13,6 +13,7 @@
 #include "config/rootnodes.hpp"
 #include "config/serviceconfig.hpp"
 #include "config/userpaths.hpp"
+#include "romanizer.hpp"
 
 namespace {
 
@@ -64,31 +65,6 @@ constexpr qreal k_indexFudge = 0.1;
 
 [[nodiscard]] bool containsCi(const QString& haystack, const QString& needle) {
     return haystack.contains(needle, Qt::CaseInsensitive);
-}
-
-[[nodiscard]] bool isLatinLetter(const char32_t u) {
-    return (u >= 0x41 && u <= 0x5A) || (u >= 0x61 && u <= 0x7A) || (u >= 0xC0 && u <= 0x24F)
-        || (u >= 0x1E00 && u <= 0x1EFF) || (u >= 0x2C60 && u <= 0x2C7F) || (u >= 0xA720 && u <= 0xA7FF)
-        || (u >= 0xFF21 && u <= 0xFF3A) || (u >= 0xFF41 && u <= 0xFF5A);
-}
-
-// True when the text contains only latin-script letters (punctuation/digits are ignored).
-[[nodiscard]] bool isLatinScript(const QString& text) {
-    for (const QChar c : text) {
-        if (c.isLetter() && !isLatinLetter(c.unicode())) {
-            return false;
-        }
-    }
-    return true;
-}
-
-[[nodiscard]] bool isLatinLrc(const QVector<LyricLine>& lines) {
-    for (const auto& l : lines) {
-        if (!isLatinScript(l.text)) {
-            return false;
-        }
-    }
-    return true;
 }
 
 [[nodiscard]] QStringList toTextList(const QVector<LyricLine>& lines) {
@@ -432,6 +408,11 @@ void Lyrics::setLines(QVector<LyricLine> lines, LyricsBackend source, QVector<Ly
     };
     std::ranges::sort(lines, byTime);
     std::ranges::sort(romanized, byTime);
+
+    // On-device romanization: only when no curated variant exists for this source
+    if (m_romanized && romanized.isEmpty() && !lines.isEmpty() && !isLatinLrc(lines)) {
+        romanized = romanizeLines(lines);
+    }
 
     m_linesOriginal = lines;
     m_linesRomanized = romanized;
