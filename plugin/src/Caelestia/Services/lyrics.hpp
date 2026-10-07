@@ -100,12 +100,15 @@ private:
     void tryLrclib(int reqId);
     void tryNetEase(int reqId);
     void chainNext(LyricsBackend justFailed, int reqId);
+    void finishWithFallback(int reqId);
+    void rememberFallback(const QVector<LyricLine>& lines, LyricsBackend backend);
 
     void searchLrclibCandidates(int reqId);
     void searchNetEaseCandidates(int reqId);
 
     void fetchLrclibById(const QString& id, int reqId);
     void fetchNetEaseLyricsById(const QString& id, int reqId);
+    void fetchNetEaseLyricsRanked(const QList<qint64>& ids, qsizetype index, int reqId);
 
     QNetworkReply* getJson(const QUrl& url, const QHash<QByteArray, QByteArray>& headers = {});
     void trackReply(int reqId, QNetworkReply* reply);
@@ -144,6 +147,10 @@ private:
     QVector<LyricLine> m_lines;
     QVector<LyricLine> m_linesOriginal;
     QVector<LyricLine> m_linesRomanized;
+    // Original lyrics rejected while hunting for a romanized variant; shown as a last resort
+    QVector<LyricLine> m_fallbackLines;
+    LyricsBackend m_fallbackBackend = LyricsBackend::Local;
+    bool m_linesSetThisLoad = false;
     QStringList m_lyrics;
     QStringList m_lyricsOriginal;
     QStringList m_lyricsRomanized;
