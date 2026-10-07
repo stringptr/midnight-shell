@@ -18,7 +18,7 @@ QtObject {
 
     property Process reader: Process {
         running: false
-        command: ["cat", "/usr/lib/python3.14/site-packages/caelestia/data/emojis.txt"]
+        command: ["caelestia", "emoji", "-p"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const result = [];
