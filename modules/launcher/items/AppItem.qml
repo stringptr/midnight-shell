@@ -41,7 +41,7 @@ Item {
         IconImage {
             id: icon
 
-            asynchronous: false
+            asynchronous: true
             source: Quickshell.iconPath(root.modelData?.icon, "image-missing")
             implicitSize: Math.max(1, parent.height * 0.8)
 

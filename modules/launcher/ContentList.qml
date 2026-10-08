@@ -21,6 +21,8 @@ Item {
     required property int padding
     required property int rounding
 
+    readonly property int sizeGraceInterval: Tokens.anim.durations.expressiveDefaultSpatial + Tokens.anim.durations.small + 100
+
     readonly property bool showWallpapers: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}wallpaper `) || search.text === `${GlobalConfig.launcher.actionPrefix}wallpaper`
     onShowWallpapersChanged: {
         if (showWallpapers) {
@@ -96,6 +98,10 @@ Item {
             name: "apps"
 
             PropertyChanges {
+                target: sizeGrace
+                running: true
+            }
+            PropertyChanges {
                 target: root
                 implicitWidth: root.Tokens.sizes.launcher.itemWidth
                 implicitHeight: Math.min(root.maxHeight, appList.implicitHeight > 0 ? appList.implicitHeight : empty.implicitHeight)
@@ -110,6 +116,10 @@ Item {
             name: "wallpapers"
 
             PropertyChanges {
+                target: sizeGrace
+                running: true
+            }
+            PropertyChanges {
                 target: root
                 implicitWidth: Math.max(root.Tokens.sizes.launcher.itemWidth * 1.2, wallpaperList.implicitWidth)
                 implicitHeight: root.Tokens.sizes.launcher.wallpaperHeight + 56 // Extra space for color buttons
@@ -123,6 +133,10 @@ Item {
             name: "windowSwitcher"
 
             PropertyChanges {
+                target: sizeGrace
+                running: true
+            }
+            PropertyChanges {
                 target: root
                 implicitWidth: Math.max(root.Tokens.sizes.launcher.itemWidth * 1.2, windowSwitcherList.implicitWidth)
                 implicitHeight: root.Tokens.sizes.launcher.windowSwitcherHeight
@@ -135,6 +149,10 @@ Item {
         State {
             name: "keybinds"
 
+            PropertyChanges {
+                target: sizeGrace
+                running: true
+            }
             PropertyChanges {
                 target: root
                 implicitWidth: root.Tokens.sizes.launcher.itemWidth
@@ -150,6 +168,10 @@ Item {
             name: "animations"
 
             PropertyChanges {
+                target: sizeGrace
+                running: true
+            }
+            PropertyChanges {
                 target: root
                 implicitWidth: root.Tokens.sizes.launcher.itemWidth
                 implicitHeight: Math.min(root.maxHeight, root.Tokens.sizes.launcher.itemHeight * 7)
@@ -161,6 +183,20 @@ Item {
 
         }
     ]
+
+    Timer {
+        id: sizeGrace
+
+        interval: root.sizeGraceInterval
+    }
+
+    Connections {
+        function onStateChanged(): void {
+            sizeGrace.restart();
+        }
+
+        target: appList.item
+    }
 
     Timer {
         id: keybindsTimer
@@ -451,13 +487,13 @@ Item {
     }
 
     Behavior on implicitWidth {
-        enabled: root.screenState.launcher
+        enabled: root.screenState.launcher && (root.search.text === "" || sizeGrace.running)
 
         Anim {}
     }
 
     Behavior on implicitHeight {
-        enabled: root.screenState.launcher
+        enabled: root.screenState.launcher && (root.search.text === "" || sizeGrace.running)
 
         Anim {}
     }

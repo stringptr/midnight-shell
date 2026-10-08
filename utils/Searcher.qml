@@ -46,10 +46,10 @@ Singleton {
                 scoreFn: r => weights.reduce((a, w, i) => a + r[i].score * w, 0)
             }, extraOpts)).map(r => r.obj._item);
 
-        return fzf.find(search).sort((a, b) => {
-            if (a.score === b.score)
-                return selector(a.item).trim().length - selector(b.item).trim().length;
-            return b.score - a.score;
-        }).map(r => r.item);
+        return fzf.find(search).map(r => ({
+            item: r.item,
+            score: r.score,
+            len: selector(r.item).trim().length
+        })).sort((a, b) => (b.score - a.score) || (a.len - b.len)).map(r => r.item);
     }
 }

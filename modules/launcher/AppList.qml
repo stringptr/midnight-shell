@@ -104,6 +104,8 @@ StyledListView {
         implicitHeight: root.currentItem?.implicitHeight ?? 0
 
         Behavior on y {
+            enabled: root.search.text === ""
+
             Anim {}
         }
     }
@@ -268,11 +270,6 @@ StyledListView {
                     easing: Tokens.anim.standardDecel
                 }
             }
-            PropertyAction {
-                targets: [root.add, root.remove]
-                property: "enabled"
-                value: true
-            }
         }
     }
 
@@ -281,7 +278,7 @@ StyledListView {
     }
 
     add: Transition {
-        enabled: !root.state
+        enabled: root.search.text === ""
 
         Anim {
             type: Anim.DefaultEffects
@@ -292,7 +289,7 @@ StyledListView {
     }
 
     remove: Transition {
-        enabled: !root.state
+        enabled: root.search.text === ""
 
         Anim {
             type: Anim.DefaultEffects
@@ -303,6 +300,8 @@ StyledListView {
     }
 
     move: Transition {
+        enabled: root.search.text === ""
+
         Anim {
             property: "y"
         }
@@ -314,6 +313,8 @@ StyledListView {
     }
 
     addDisplaced: Transition {
+        enabled: root.search.text === ""
+
         Anim {
             property: "y"
             type: Anim.StandardSmall
@@ -326,6 +327,8 @@ StyledListView {
     }
 
     displaced: Transition {
+        enabled: root.search.text === ""
+
         Anim {
             property: "y"
         }
@@ -410,7 +413,8 @@ StyledListView {
 
     Connections {
         function onLauncherChanged() {
-            root.syncDisplayText();
+            if (root.screenState.launcher)
+                root.applyDisplayText();
         }
 
         target: root.screenState
