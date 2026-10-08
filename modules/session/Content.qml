@@ -26,21 +26,44 @@ Column {
 
         SessionButton {
             id: topBtn
+
             required property var modelData
             required property int index
+
+            function requestFocus(): void {
+                focusTimer.restart();
+            }
 
             icon: modelData.icon
             command: modelData.command
 
             Component.onCompleted: {
-                if (index === 0)
-                    topBtn.forceActiveFocus();
+                if (index === 0 && root.screenState.session)
+                    requestFocus();
+            }
+
+            // Focus only lands once the panel is visible and the layer-shell window
+            // holds keyboard focus, both of which arrive a beat after the open
+            // transition starts - retry on a timer (same pattern as WirelessPassword).
+            Timer {
+                id: focusTimer
+
+                interval: 150
+                onTriggered: {
+                    if (root.screenState.session)
+                        topBtn.forceActiveFocus();
+                }
             }
 
             Connections {
                 function onLauncherChanged(): void {
                     if (index === 0 && !root.screenState.launcher)
-                        topBtn.forceActiveFocus();
+                        requestFocus();
+                }
+
+                function onSessionChanged(): void {
+                    if (index === 0 && root.screenState.session)
+                        requestFocus();
                 }
 
                 target: root.screenState
