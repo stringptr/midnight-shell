@@ -31,6 +31,8 @@ namespace {
 
 constexpr int k_loadDebounceMs = 50;
 constexpr qreal k_indexFudge = 0.1;
+// No timeout means a stalled LRCLIB/NetEase/QQ connection leaves the UI on "Loading" forever
+constexpr unsigned int k_transferTimeoutMs = 15000;
 
 [[nodiscard]] const QHash<QByteArray, QByteArray>& netEaseHeaders() {
     static const QHash<QByteArray, QByteArray> k_h = {
@@ -58,6 +60,7 @@ constexpr qreal k_indexFudge = 0.1;
 
 [[nodiscard]] QNetworkRequest jsonRequest(const QUrl& url, const QHash<QByteArray, QByteArray>& headers) {
     QNetworkRequest req(url);
+    req.setTransferTimeout(k_transferTimeoutMs);
     req.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::AlwaysNetwork);
     req.setRawHeader("Cache-Control"_ba, "no-cache, no-store"_ba);
     req.setRawHeader("Pragma"_ba, "no-cache"_ba);
@@ -308,13 +311,22 @@ void Lyrics::setSelectedCandidate(const LyricCandidate& value) {
         return;
     }
 
-    const auto b = value.backend();
-    setBackend(b);
     setLoading(true);
 
     // Invalidate before cancelling: an aborted reply still emits finished
     const int reqId = newRequestId();
     cancelInFlight();
+
+    loadCandidate(value, reqId);
+
+    if (!m_settingFromPrefs) {
+        persistTrackPrefs();
+    }
+}
+
+void Lyrics::loadCandidate(const LyricCandidate& value, int reqId) {
+    const auto b = value.backend();
+    setBackend(b);
 
     if (b == LyricsBackend::LRCLIB || b == LyricsBackend::NetEase || b == LyricsBackend::QQMusic) {
         const QString cached = readCachedLrc(b, value.id());
@@ -328,9 +340,6 @@ void Lyrics::setSelectedCandidate(const LyricCandidate& value) {
                 if (!m_romanized || !romanized.isEmpty() || isLatinLrc(lines)) {
                     setLines(lines, b, romanized);
                     setLoading(false);
-                    if (!m_settingFromPrefs) {
-                        persistTrackPrefs();
-                    }
                     return;
                 }
                 qCDebug(lcLyrics) << "romanized: cached" << b << "lyrics unusable, refetching id" << value.id();
@@ -357,10 +366,10 @@ void Lyrics::setSelectedCandidate(const LyricCandidate& value) {
             qCWarning(lcLyrics) << "selectedCandidate: cannot open local file" << value.id();
             setLoading(false);
         }
-    }
-
-    if (!m_settingFromPrefs) {
-        persistTrackPrefs();
+    } else {
+        // Never leave the UI on "Loading" for an unusable saved selection
+        qCWarning(lcLyrics) << "selectedCandidate: unsupported backend for id" << value.id();
+        setLoading(false);
     }
 }
 
@@ -640,11 +649,20 @@ void Lyrics::doLoad() {
     searchQQMusicCandidates(reqId);
 
     if (restored.isValid()) {
-        // Honor saved selection for this track
-        m_settingFromPrefs = true;
-        setSelectedCandidate(restored);
-        m_settingFromPrefs = false;
-        return;
+        // A saved Local/LRCLIB selection can never satisfy an active romanized request;
+        // skip it and run the normal chain instead. The pin stays saved for when
+        // romanized is off, and manual picker picks still win via setSelectedCandidate.
+        const bool pinBlockedByRomanized =
+            m_romanized
+            && (restored.backend() == LyricsBackend::LRCLIB || restored.backend() == LyricsBackend::Local);
+        if (!pinBlockedByRomanized) {
+            // Honor saved selection for this track. Restore with this load's request id
+            // and without cancelling, so the candidate searches above keep running.
+            m_selected = restored;
+            emit selectedCandidateChanged();
+            loadCandidate(restored, reqId);
+            return;
+        }
     }
 
     // Primary attempt by preferred backend
@@ -1097,8 +1115,18 @@ void Lyrics::fetchNetEaseLyricsRanked(const QList<qint64>& ids, qsizetype index,
                     advance();
                     return;
                 }
-                // Prefer semantics: show the original rather than nothing
-                qCDebug(lcLyrics) << "netease /lyric: no romalrc for id" << ids.at(index) << "- using original";
+                // Nothing romanized in the ranked list: hold this original back and move
+                // to the next backend; finishWithFallback shows it if nothing else lands
+                qCDebug(lcLyrics) << "netease /lyric: no romalrc for id" << ids.at(index)
+                                  << "- trying next backend";
+                const QString idStr = QString::number(ids.at(index));
+                writeCachedLrc(LyricsBackend::NetEase, idStr, lrc);
+                if (!romalrc.isEmpty()) {
+                    writeCachedRomanizedLrc(LyricsBackend::NetEase, idStr, romalrc);
+                }
+                rememberFallback(original, LyricsBackend::NetEase);
+                chainNext(LyricsBackend::NetEase, reqId);
+                return;
             }
         }
 
@@ -1289,8 +1317,15 @@ void Lyrics::fetchQQMusicLyricsRanked(const QList<qint64>& ids, qsizetype index,
                 advance();
                 return;
             }
-            // Prefer semantics: show the original rather than nothing
-            qCDebug(lcLyrics) << "qqmusic /lyric: no romanization for id" << ids.at(index) << "- using original";
+            // Nothing romanized in the ranked list: hold this original back and finish
+            // the chain; finishWithFallback shows it if nothing else landed
+            qCDebug(lcLyrics) << "qqmusic /lyric: no romanization for id" << ids.at(index)
+                              << "- trying next backend";
+            const QString idStr = QString::number(ids.at(index));
+            writeCachedLrc(LyricsBackend::QQMusic, idStr, lrc);
+            rememberFallback(original, LyricsBackend::QQMusic);
+            chainNext(LyricsBackend::QQMusic, reqId);
+            return;
         }
 
         const QString idStr = QString::number(ids.at(index));

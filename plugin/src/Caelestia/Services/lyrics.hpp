@@ -90,6 +90,7 @@ private:
     void clearLines();
     void appendCandidates(const QList<LyricCandidate>& add);
     void clearCandidates();
+    void loadCandidate(const LyricCandidate& value, int reqId);
 
     void scheduleLoad();
     void doLoad();
