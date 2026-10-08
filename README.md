@@ -1010,6 +1010,7 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
                 "name": "Keybinds"
             }
         ],
+        "animateSize": true,
         "dragThreshold": 50,
         "enableDangerousActions": false,
         "enabled": true,

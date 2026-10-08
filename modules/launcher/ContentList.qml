@@ -487,13 +487,13 @@ Item {
     }
 
     Behavior on implicitWidth {
-        enabled: root.screenState.launcher && (root.search.text === "" || sizeGrace.running)
+        enabled: root.screenState.launcher && (Config.launcher.animateSize || root.search.text === "" || sizeGrace.running)
 
         Anim {}
     }
 
     Behavior on implicitHeight {
-        enabled: root.screenState.launcher && (root.search.text === "" || sizeGrace.running)
+        enabled: root.screenState.launcher && (Config.launcher.animateSize || root.search.text === "" || sizeGrace.running)
 
         Anim {}
     }

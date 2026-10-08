@@ -45,6 +45,7 @@ class LauncherConfig : public settings::ObjectNode {
     CONFIG_PROPERTY(bool, showOnHover, false)
     CONFIG_PROPERTY(int, maxShown, 7)
     CONFIG_PROPERTY(int, maxWallpapers, 9)
+    CONFIG_PROPERTY(bool, animateSize, true)
     CONFIG_GLOBAL_PROPERTY(QString, specialPrefix, u"@"_s)
     CONFIG_GLOBAL_PROPERTY(QString, actionPrefix, u">"_s)
     CONFIG_GLOBAL_PROPERTY(bool, enableDangerousActions, false)

@@ -89,8 +89,20 @@ PageBase {
             text: Tr.tr("Display")
         }
 
-        StepperRow {
+        ToggleRow {
             first: true
+            text: Tr.tr("Animate size")
+            subtext: Tr.tr("Smoothly resize the launcher while searching")
+            configNode: root.targetConfig.launcher
+            propertyName: "animateSize"
+            checked: root.targetConfig.launcher.animateSize
+            onToggled: {
+                root.targetConfig.launcher.animateSize = checked;
+                root.targetConfig.save();
+            }
+        }
+
+        StepperRow {
             label: qsTr("Max items shown")
             configNode: root.targetConfig.launcher
             propertyName: "maxShown"
