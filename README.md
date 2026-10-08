@@ -131,6 +131,8 @@ If you're migrating from the official caelestia shell to this fork, you may need
         "enabled": false,
         "autoHide": true,
         "scale": 1.0,
+        "height": 180,
+        "contextLines": 1,
         "position": "bottom-center",
         "alignment": 1,
         "invertColors": false,
@@ -573,10 +575,12 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
                 "enabled": false,
                 "opacity": 0.7
             },
+            "contextLines": 1,
             "enabled": false,
             "filteredApps": [
                 "Spotify"
             ],
+            "height": 180,
             "invertColors": false,
             "position": "bottom-center",
             "scale": 1,

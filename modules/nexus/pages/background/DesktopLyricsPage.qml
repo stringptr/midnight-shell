@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Caelestia.Config
+import Caelestia.I18n
 import qs.components.controls
 import qs.modules.nexus.common
 
@@ -181,6 +182,48 @@ PageBase {
             onMoved: v => {
                 root.targetConfig.background.desktopLyrics.scale = 0.5 + v * 2.5;
                 root.targetConfig.save();
+            }
+        }
+
+        StepperRow {
+            Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
+            Layout.fillWidth: true
+            label: Tr.tr("Height")
+            subtext: Tr.tr("Box height in pixels, shows more lines when taller")
+            configNode: root.targetConfig.background.desktopLyrics
+            propertyName: "height"
+            value: root.targetConfig.background.desktopLyrics.height
+            from: 80
+            to: 600
+            stepSize: 10
+            showReset: true
+            onMoved: v => {
+                root.targetConfig.background.desktopLyrics.height = v;
+                root.targetConfig.save();
+            }
+            onReset: {
+                root.targetConfig.background.desktopLyrics.resetOption("height");
+            }
+        }
+
+        StepperRow {
+            Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
+            Layout.fillWidth: true
+            label: Tr.tr("Surrounding lines")
+            subtext: Tr.tr("Lines shown above and below the current line")
+            configNode: root.targetConfig.background.desktopLyrics
+            propertyName: "contextLines"
+            value: root.targetConfig.background.desktopLyrics.contextLines
+            from: 0
+            to: 3
+            stepSize: 1
+            showReset: true
+            onMoved: v => {
+                root.targetConfig.background.desktopLyrics.contextLines = v;
+                root.targetConfig.save();
+            }
+            onReset: {
+                root.targetConfig.background.desktopLyrics.resetOption("contextLines");
             }
         }
 

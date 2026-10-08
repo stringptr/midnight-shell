@@ -44,16 +44,32 @@ Item {
     readonly property bool isCurrentActive: currentLyricIndex >= 0
 
     property var player: Players.active
-    property string displayedLyric: ""
-    property string previousLyricText: ""
-    property string nextLyricText: ""
-    readonly property bool hasText: displayedLyric.trim() !== "" || previousLyricText.trim() !== "" || nextLyricText.trim() !== ""
+    readonly property int contextLines: Config.background.desktopLyrics.contextLines
+    readonly property int centerSlot: contextLines
+    readonly property int slotCount: contextLines * 2 + 1
+    readonly property bool hasText: {
+        const lines = Lyrics.lyrics;
+        for (let d = -contextLines; d <= contextLines; d++) {
+            const i = currentLyricIndex + d;
+            if (i >= 0 && i < lines.length && (lines[i] ?? "").trim() !== "")
+                return true;
+        }
+        return false;
+    }
 
     property real lyricSpacing: Tokens.spacing.large * root.lyricsScale
-    property real targetCenterY: lyricsContainer.height > 0 ? (lyricsContainer.height - lyricContainer.height) / 2 : 0
-    property real targetPrevY: targetCenterY - prevLyricItem.height - lyricSpacing
-    property real targetNextY: targetCenterY + lyricContainer.height + lyricSpacing
-    property real startNextY: targetNextY + nextLyricItem.height + lyricSpacing
+    property int slideDir: 1
+    property int lastSlideIndex: -1
+    readonly property int textAlignment: {
+        switch (root.alignment) {
+        case 0:
+            return Text.AlignLeft;
+        case 2:
+            return Text.AlignRight;
+        default:
+            return Text.AlignHCenter;
+        }
+    }
 
     function reloadTrack() {
         const p = Players.active;
@@ -65,43 +81,52 @@ Item {
     }
 
     function forceUpdate() {
-        if (Lyrics.hasLyrics) {
-            currentLyricIndex = Lyrics.indexForTime(Players.active?.position ?? 0);
-            if (currentLyricIndex >= 0) {
-                displayedLyric = (Lyrics.lyrics[currentLyricIndex] ?? "").replace(/\u00A0/g, " ");
-                previousLyricText = currentLyricIndex > 0 ? (Lyrics.lyrics[currentLyricIndex - 1] ?? "").replace(/\u00A0/g, " ") : "";
-                nextLyricText = currentLyricIndex < Lyrics.lyrics.length - 1 ? (Lyrics.lyrics[currentLyricIndex + 1] ?? "").replace(/\u00A0/g, " ") : "";
-            } else {
-                displayedLyric = "";
-                previousLyricText = "";
-                nextLyricText = (Lyrics.lyrics[0] ?? "").replace(/\u00A0/g, " ");
+        currentLyricIndex = Lyrics.hasLyrics ? Lyrics.indexForTime(Players.active?.position ?? 0) : -1;
+    }
+
+    function lineText(d) {
+        const i = currentLyricIndex + d;
+        const lines = Lyrics.lyrics;
+        if (i < 0 || i >= lines.length)
+            return "";
+        return (lines[i] ?? "").replace(/\u00A0/g, " ");
+    }
+
+    function slotY(s) {
+        repeater.count; // Re-evaluate once delegates finish building
+        const c = centerSlot;
+        const sp = lyricSpacing;
+        const center = repeater.itemAt(c);
+        let y = (lyricsContainer.height - (center ? center.height : 0)) / 2;
+        if (s > c) {
+            for (let k = c; k < s; k++) {
+                const it = repeater.itemAt(k);
+                if (it && it.visible)
+                    y += it.height + sp;
             }
-            lyricSlide.running = true;
         } else {
-            currentLyricIndex = -1;
-            displayedLyric = "";
-            previousLyricText = "";
-            nextLyricText = "";
+            for (let k = c - 1; k >= s; k--) {
+                const it = repeater.itemAt(k);
+                if (it && it.visible)
+                    y -= it.height + sp;
+            }
         }
+        return y;
+    }
+
+    function slideFromY(s, dir) {
+        const last = slotCount - 1;
+        const it = repeater.itemAt(s);
+        if (dir > 0 && s === last)
+            return slotY(s) + (it && it.visible ? it.height + lyricSpacing : 0);
+        if (dir < 0 && s === 0)
+            return slotY(s) - (it && it.visible ? it.height + lyricSpacing : 0);
+        return slotY(s + dir);
     }
 
     onCurrentLyricIndexChanged: {
-        if (Lyrics.hasLyrics) {
-            if (currentLyricIndex >= 0) {
-                displayedLyric = (Lyrics.lyrics[currentLyricIndex] ?? "").replace(/\u00A0/g, " ");
-                previousLyricText = currentLyricIndex > 0 ? (Lyrics.lyrics[currentLyricIndex - 1] ?? "").replace(/\u00A0/g, " ") : "";
-                nextLyricText = currentLyricIndex < Lyrics.lyrics.length - 1 ? (Lyrics.lyrics[currentLyricIndex + 1] ?? "").replace(/\u00A0/g, " ") : "";
-            } else {
-                displayedLyric = "";
-                previousLyricText = "";
-                nextLyricText = (Lyrics.lyrics[0] ?? "").replace(/\u00A0/g, " ");
-            }
-            lyricSlide.running = true;
-        } else {
-            displayedLyric = "";
-            previousLyricText = "";
-            nextLyricText = "";
-        }
+        slideDir = currentLyricIndex > lastSlideIndex ? 1 : -1;
+        lastSlideIndex = currentLyricIndex;
     }
 
     Component.onCompleted: {
@@ -109,7 +134,7 @@ Item {
     }
 
     implicitWidth: 350 * root.lyricsScale
-    implicitHeight: 180 * root.lyricsScale
+    implicitHeight: Config.background.desktopLyrics.height * root.lyricsScale
 
     opacity: (((root.hasLyrics && root.hasText) || Lyrics.loading) && !root.shouldHide && root.appFilterActive) ? 1 : 0
     visible: opacity > 0
@@ -130,46 +155,9 @@ Item {
         }
     }
 
-    SequentialAnimation {
-        id: lyricSlide
-
-        PropertyAction {
-            target: prevLyricItem
-            property: "y"
-            value: root.targetCenterY
-        }
-        PropertyAction {
-            target: lyricContainer
-            property: "y"
-            value: root.targetNextY
-        }
-        PropertyAction {
-            target: nextLyricItem
-            property: "y"
-            value: root.startNextY
-        }
-        ParallelAnimation {
-            NumberAnimation {
-                target: prevLyricItem
-                property: "y"
-                to: root.targetPrevY
-                duration: Tokens.anim.durations.expressiveDefaultEffects
-                easing.type: Easing.OutCubic
-            }
-            NumberAnimation {
-                target: lyricContainer
-                property: "y"
-                to: root.targetCenterY
-                duration: Tokens.anim.durations.expressiveDefaultEffects
-                easing.type: Easing.OutCubic
-            }
-            NumberAnimation {
-                target: nextLyricItem
-                property: "y"
-                to: root.targetNextY
-                duration: Tokens.anim.durations.expressiveDefaultEffects
-                easing.type: Easing.OutCubic
-            }
+    Behavior on implicitHeight {
+        Anim {
+            type: Anim.StandardSmall
         }
     }
 
@@ -206,7 +194,6 @@ Item {
 
     Connections {
         function onHasLyricsChanged() {
-            root.hasLyrics = Lyrics.hasLyrics;
             root.forceUpdate();
         }
 
@@ -357,127 +344,85 @@ Item {
                 }
             }
 
-            // --- Previous Lyric ---
-            Item {
-                id: prevLyricItem
+            Repeater {
+                id: repeater
 
-                width: parent.width
-                height: prevLyricLabel.implicitHeight
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: root.targetPrevY
-                visible: root.isCurrentActive
+                model: root.slotCount
 
-                StyledText {
-                    id: prevLyricLabel
+                delegate: Item {
+                    id: slot
 
-                    anchors.fill: parent
-                    text: root.previousLyricText
-                    font.family: root.sansFont
-                    font.pointSize: Tokens.font.body.medium.pointSize * root.lyricsScale
-                    color: root.safeSecondary
-                    opacity: 0.6
-                    wrapMode: Text.WordWrap
-                    horizontalAlignment: {
-                        switch (root.alignment) {
-                        case 0:
-                            return Text.AlignLeft;
-                        case 2:
-                            return Text.AlignRight;
-                        default:
-                            return Text.AlignHCenter;
-                        }
-                    }
-                }
-            }
+                    required property int index
 
-            // --- Current Lyric ---
-            Item {
-                id: lyricContainer
-
-                width: parent.width
-                height: currentLyricLabel.implicitHeight
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: root.targetCenterY
-                visible: root.isCurrentActive
-
-                MultiEffect {
-                    id: lyricGlow
-
-                    anchors.fill: currentLyricLabel
-                    source: currentLyricLabel
-                    scale: currentLyricLabel.scale
-                    enabled: root.isCurrentActive
-
-                    blurEnabled: true
-                    blur: 0.4
-
-                    shadowEnabled: true
-                    shadowColor: Colours.palette.m3primary
-                    shadowOpacity: 0.5
-                    shadowBlur: 0.6
-                    shadowHorizontalOffset: 0
-                    shadowVerticalOffset: 0
-
-                    autoPaddingEnabled: true
-                }
-
-                StyledText {
-                    id: currentLyricLabel
+                    readonly property int distance: index - root.centerSlot
+                    readonly property bool isCenter: distance === 0
+                    readonly property string line: root.lineText(distance)
+                    readonly property real bigPointSize: Tokens.font.title.medium.pointSize * 1.3 * root.lyricsScale
+                    readonly property real smallPointSize: Tokens.font.body.medium.pointSize * root.lyricsScale
 
                     width: parent.width
-                    text: root.displayedLyric
-                    font.family: root.sansFont
-                    font.pointSize: Tokens.font.title.medium.pointSize * 1.3 * root.lyricsScale
-                    font.weight: Font.Bold
-                    color: Colours.palette.m3primary
-                    wrapMode: Text.WordWrap
-                    horizontalAlignment: {
-                        switch (root.alignment) {
-                        case 0:
-                            return Text.AlignLeft;
-                        case 2:
-                            return Text.AlignRight;
-                        default:
-                            return Text.AlignHCenter;
+                    height: label.implicitHeight
+                    y: root.slotY(index)
+                    visible: root.isCurrentActive && line !== ""
+
+                    Connections {
+                        function onCurrentLyricIndexChanged() {
+                            if (root.isCurrentActive)
+                                slide.restart();
+                        }
+
+                        target: root
+                    }
+
+                    SequentialAnimation {
+                        id: slide
+
+                        PropertyAction {
+                            target: slot
+                            property: "y"
+                            value: root.slideFromY(slot.index, root.slideDir)
+                        }
+
+                        NumberAnimation {
+                            target: slot
+                            property: "y"
+                            to: root.slotY(slot.index)
+                            duration: Tokens.anim.durations.expressiveDefaultEffects
+                            easing.type: Easing.OutCubic
                         }
                     }
 
-                    Behavior on color {
-                        CAnim {
-                            duration: Tokens.anim.durations.expressiveFastEffects
-                        }
+                    MultiEffect {
+                        anchors.fill: label
+                        source: label
+                        scale: label.scale
+                        enabled: slot.isCenter && root.isCurrentActive
+
+                        blurEnabled: true
+                        blur: 0.4
+
+                        shadowEnabled: true
+                        shadowColor: Colours.palette.m3primary
+                        shadowOpacity: 0.5
+                        shadowBlur: 0.6
+                        shadowHorizontalOffset: 0
+                        shadowVerticalOffset: 0
+
+                        autoPaddingEnabled: true
                     }
-                }
-            }
 
-            Item {
-                id: nextLyricItem
+                    StyledText {
+                        id: label
 
-                width: parent.width
-                height: nextLyricLabel.implicitHeight
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: root.targetNextY
-                visible: root.isCurrentActive
-
-                StyledText {
-                    id: nextLyricLabel
-
-                    anchors.fill: parent
-                    text: root.nextLyricText
-                    font.family: root.sansFont
-                    font.pointSize: Tokens.font.body.medium.pointSize * root.lyricsScale
-                    color: root.safeSecondary
-                    opacity: 0.6
-                    wrapMode: Text.WordWrap
-                    horizontalAlignment: {
-                        switch (root.alignment) {
-                        case 0:
-                            return Text.AlignLeft;
-                        case 2:
-                            return Text.AlignRight;
-                        default:
-                            return Text.AlignHCenter;
-                        }
+                        anchors.fill: parent
+                        text: slot.line
+                        font.family: root.sansFont
+                        font.pointSize: slot.isCenter ? slot.bigPointSize : slot.smallPointSize
+                        font.weight: slot.isCenter ? Font.Bold : Tokens.font.body.small.weight
+                        color: slot.isCenter ? Colours.palette.m3primary : root.safeSecondary
+                        opacity: slot.isCenter ? 1 : Math.max(0.3, 0.6 - (Math.abs(slot.distance) - 1) * 0.15)
+                        wrapMode: Text.WordWrap
+                        horizontalAlignment: root.textAlignment
                     }
                 }
             }

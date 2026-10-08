@@ -74,6 +74,8 @@ class DesktopLyrics : public settings::ObjectNode {
     CONFIG_PROPERTY(bool, autoHideFullscreen, true)
     CONFIG_PROPERTY(bool, autoHideTiled, true)
     CONFIG_PROPERTY(qreal, scale, 1.0)
+    CONFIG_PROPERTY(int, height, 180)
+    CONFIG_PROPERTY(int, contextLines, 1)
     CONFIG_PROPERTY(QString, position, u"bottom-center"_s)
     CONFIG_PROPERTY(int, alignment, 1)
     CONFIG_PROPERTY(bool, invertColors, false)
