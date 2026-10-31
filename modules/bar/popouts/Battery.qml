@@ -37,6 +37,7 @@ Column {
     Component.onCompleted: {
         PowerCtl.fetchProfile();
         PowerCtl.fetchChargeLimit();
+        ChargeThreshold.refresh();
     }
 
     StyledText {
@@ -239,6 +240,55 @@ Column {
             stepSize: 1
             value: PowerCtl.chargeLimit > 0 ? PowerCtl.chargeLimit : 100
             onReleased: v => PowerCtl.setChargeLimit(Math.round(from + v * (to - from)))
+        }
+    }
+
+    Column {
+        id: upowerChargeSection
+
+        visible: ChargeThreshold.supported && !PowerCtl.usingAsusctl
+
+        anchors.horizontalCenter: parent.horizontalCenter
+        spacing: Tokens.spacing.small
+
+        StyledText {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: Tr.tr("Charge limit")
+        }
+
+        Row {
+            anchors.horizontalCenter: parent.horizontalCenter
+            spacing: Tokens.spacing.medium
+
+            StyledText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: ChargeThreshold.enabled ? Tr.tr("Battery care enabled") : Tr.tr("Charge to full")
+            }
+
+            StyledSwitch {
+                id: chargeThresholdSwitch
+
+                anchors.verticalCenter: parent.verticalCenter
+                checked: ChargeThreshold.enabled
+                disabled: ChargeThreshold.busy
+                onToggled: ChargeThreshold.setEnabled(checked)
+            }
+        }
+
+        StyledText {
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: Math.min(implicitWidth, root.width - Tokens.padding.medium * 2)
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.Wrap
+            text: {
+                if (!ChargeThreshold.enabled)
+                    return Tr.tr("The battery charges to 100%");
+                if (ChargeThreshold.endThresholdSupported)
+                    return Tr.tr("Stops charging at %1%").arg(ChargeThreshold.endThreshold);
+                return Tr.tr("The firmware chooses the upper limit");
+            }
+            color: Colours.palette.m3onSurfaceVariant
+            font: Tokens.font.body.small
         }
     }
 

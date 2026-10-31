@@ -53,7 +53,7 @@ Item {
 
             StyledText {
                 Layout.fillWidth: true
-                text: (modelData && modelData.bind) ? modelData.bind : qsTr("No keybinds")
+                text: (modelData && (modelData.key || modelData.bind)) ? (modelData.key || modelData.bind) : qsTr("No keybinds")
                 font: Tokens.font.body.medium
                 color: Colours.palette.m3onSurface
                 elide: Text.ElideRight

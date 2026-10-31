@@ -165,6 +165,7 @@ MouseArea {
 
         MouseArea {
             anchors.fill: parent
+            enabled: root.expanded
             hoverEnabled: true
             onWheel: e => e.accepted = true
         }

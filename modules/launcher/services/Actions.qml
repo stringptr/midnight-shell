@@ -19,6 +19,15 @@ Searcher {
     list: variants.instances
     useFuzzy: GlobalConfig.launcher.useFuzzy.actions
 
+    // Match the description as well, so words like "notification" or "music"
+    // still find the relevant action instead of only matching its name.
+    keys: ["name", "desc"]
+    weights: [1, 0.5]
+
+    function selector(item: var): string {
+        return `${item.name} ${item.desc}`;
+    }
+
     Variants {
         id: variants
 

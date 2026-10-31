@@ -44,6 +44,18 @@ Item {
                 enabled: Config.dashboard.showWeather
             },
             {
+                component: providersComponent,
+                iconName: "hub",
+                text: Tr.tr("Providers"),
+                enabled: Config.dashboard.showProviders
+            },
+            {
+                component: containersComponent,
+                iconName: "deployed_code",
+                text: Tr.tr("Containers"),
+                enabled: Config.dashboard.showContainers
+            },
+            {
                 component: lastfmComponent,
                 iconName: "music_note",
                 text: Tr.tr("Last.fm"),
@@ -61,6 +73,14 @@ Item {
 
     readonly property real nonAnimWidth: view.implicitWidth + viewWrapper.anchors.margins * 2
     readonly property real nonAnimHeight: tabs.implicitHeight + tabs.anchors.topMargin + view.implicitHeight + viewWrapper.anchors.margins * 2
+
+    // Tabs can be disabled from Nexus while the dashboard is open, which shifts
+    // or removes the current index. Keep the selection inside the visible range.
+    onDashboardTabsChanged: {
+        const last = root.dashboardTabs.length - 1;
+        if (last >= 0 && root.screenState.dashboardTab > last)
+            root.screenState.dashboardTab = last;
+    }
 
     implicitWidth: nonAnimWidth
     implicitHeight: nonAnimHeight
@@ -238,6 +258,18 @@ Item {
                 id: weatherComponent
 
                 WeatherTab {}
+            }
+
+            Component {
+                id: providersComponent
+
+                ProvidersTab {}
+            }
+
+            Component {
+                id: containersComponent
+
+                ContainersTab {}
             }
 
             Component {

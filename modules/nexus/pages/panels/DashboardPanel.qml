@@ -290,6 +290,32 @@ PageBase {
 
         ToggleRow {
             Layout.fillWidth: true
+            text: qsTr("Providers")
+            subtext: qsTr("LLM quota and rate-limit status. Reads local provider data only while the tab is open")
+            configNode: root.targetConfig.dashboard
+            propertyName: "showProviders"
+            checked: root.targetConfig.dashboard.showProviders
+            onToggled: {
+                root.targetConfig.dashboard.showProviders = checked;
+                root.targetConfig.save();
+            }
+        }
+
+        ToggleRow {
+            Layout.fillWidth: true
+            text: qsTr("Containers")
+            subtext: qsTr("Podman containers. Runs podman ps only while the tab is open")
+            configNode: root.targetConfig.dashboard
+            propertyName: "showContainers"
+            checked: root.targetConfig.dashboard.showContainers
+            onToggled: {
+                root.targetConfig.dashboard.showContainers = checked;
+                root.targetConfig.save();
+            }
+        }
+
+        ToggleRow {
+            Layout.fillWidth: true
             text: Tr.tr("Last.fm")
             configNode: root.targetConfig.dashboard
             propertyName: "showLastfm"

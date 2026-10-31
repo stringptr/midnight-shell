@@ -174,6 +174,22 @@ write_preset "$presets/$off_name/sunsetr.toml" "$day_temp" "$day_gamma"
         }
     }
 
+    IpcHandler {
+        target: "sunsetr"
+
+        function setMode(mode: string): void {
+            root.setMode(mode);
+        }
+
+        function toggle(): void {
+            root.toggle();
+        }
+
+        function getMode(): string {
+            return root.mode;
+        }
+    }
+
     Process {
         id: availProc
 

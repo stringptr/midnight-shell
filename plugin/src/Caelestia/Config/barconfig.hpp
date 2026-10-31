@@ -96,14 +96,27 @@ class BarTray : public settings::ObjectNode {
     CONFIG_GLOBAL_PROPERTY(QStringList, hiddenIcons, {})
 };
 
+class BarAlarm : public settings::ObjectNode {
+    CONFIG_NODE(BarAlarm, settings::ObjectNode)
+
+    // Gap between repeats, and how long the sound keeps repeating before it
+    // stays quiet with the notification still waiting to be dismissed.
+    CONFIG_PROPERTY(int, soundInterval, 10)
+    CONFIG_PROPERTY(int, soundDuration, 60)
+    // What to do when the alarm was missed by more than a minute, e.g. the
+    // shell was off or the machine was suspended through it.
+    CONFIG_ENUM_PROPERTY(AlarmMissed, missedAction, AlarmMissed::Ring)
+};
+
 class BarClock : public settings::ObjectNode {
     CONFIG_NODE(BarClock, settings::ObjectNode)
 
     CONFIG_PROPERTY(bool, background, false)
     CONFIG_PROPERTY(bool, showDate, false)
     CONFIG_PROPERTY(bool, showIcon, true)
-    CONFIG_PROPERTY(bool, showSeconds, false)
+    CONFIG_PROPERTY(bool, showSeconds, true)
     CONFIG_PROPERTY(bool, uppercaseAmPm, false)
+    CONFIG_SUBOBJECT(BarAlarm, alarm)
 };
 
 class BarDock : public settings::ObjectNode {

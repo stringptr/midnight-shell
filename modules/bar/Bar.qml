@@ -169,6 +169,10 @@ Item {
             } else {
                 popouts.hasCurrent = false;
             }
+        } else if (id === "clock") {
+            popouts.currentName = "clock";
+            popouts.currentCenter = isHorizontal ? ch.mapToItem(null, ch.implicitWidth / 2, 0).x : ch.mapToItem(null, 0, ch.implicitHeight / 2).y;
+            popouts.hasCurrent = true;
         } else {
             popouts.hasCurrent = false;
         }

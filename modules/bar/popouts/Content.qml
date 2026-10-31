@@ -130,6 +130,13 @@ Item {
         }
 
         Popout {
+            name: "clock"
+            sourceComponent: ClockPopout {
+                popouts: root.popouts
+            }
+        }
+
+        Popout {
             name: "audio"
             sourceComponent: AudioPopout {
                 popouts: root.popouts

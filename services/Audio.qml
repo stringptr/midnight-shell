@@ -140,6 +140,12 @@ Singleton {
         }
     }
 
+    // Alarms bypass the UI sound toggle on purpose: a silent alarm is worse than
+    // a noisy desktop. Volume still follows the notification volume setting.
+    function playAlarm(): void {
+        notificationSound.play();
+    }
+
     function playCameraClick(): void {
         playSound(sfxCameraClick, GlobalConfig.audio.sounds.cameraClick);
     }

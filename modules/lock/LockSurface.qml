@@ -62,12 +62,10 @@ WlSessionLockSurface {
                 to: 1
                 type: Anim.StandardLarge
             }
-            Anim {
-                target: background
-                property: "opacity"
-                to: 0
-                type: Anim.StandardLarge
-            }
+            // The blurred capture stays opaque for the whole animation. Compositors
+            // do not draw the session behind a lock surface, so fading it out would
+            // expose their solid locked-session background (niri paints it red)
+            // before `locked` flips to false below.
             SequentialAnimation {
                 PauseAnimation {
                     duration: Tokens.anim.durations.small
@@ -92,12 +90,8 @@ WlSessionLockSurface {
 
         running: true
 
-        Anim {
-            target: background
-            property: "opacity"
-            to: 1
-            type: Anim.StandardLarge
-        }
+        // background is opaque from the first frame, so there is no fade-in here.
+        // See the note on `background` below.
         SequentialAnimation {
             ParallelAnimation {
                 Anim {
@@ -161,7 +155,10 @@ WlSessionLockSurface {
         id: background
 
         anchors.fill: parent
-        opacity: 0
+        // Opaque from the very first frame. A transparent lock surface would expose
+        // the compositor's locked-session background (niri paints it red) until the
+        // blurred capture became visible.
+        opacity: 1
 
         layer.enabled: true
         layer.effect: MultiEffect {

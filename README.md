@@ -688,9 +688,15 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
             "showOnHover": true
         },
         "clock": {
+            "alarm": {
+                "missedAction": "Ring",
+                "soundDuration": 60,
+                "soundInterval": 10
+            },
             "background": false,
             "showDate": false,
             "showIcon": true,
+            "showSeconds": false,
             "uppercaseAmPm": false
         },
         "dock": {
@@ -801,10 +807,12 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
         },
         "profilePicShape": 9,
         "resourceUpdateInterval": 1000,
+        "showContainers": false,
         "showDashboard": true,
         "showMedia": true,
         "showOnHover": true,
         "showPerformance": true,
+        "showProviders": false,
         "showTerminal": true,
         "showWeather": true
     },
